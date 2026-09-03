@@ -8,6 +8,7 @@ import {
   BookOpen,
   FileText,
   Cpu,
+  Coins,
   ArrowRight,
   CheckCircle2,
   AlertCircle,
@@ -44,7 +45,7 @@ export default function DashboardPage() {
     fetchOverview();
   }, [activeInstitution?.id]);
 
-  const formatTokens = (num: number = 0) => {
+  const formatCredits = (num: number = 0) => {
     if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M`;
     if (num >= 1_000) return `${(num / 1_000).toFixed(1)}k`;
     return num.toLocaleString();
@@ -205,29 +206,34 @@ export default function DashboardPage() {
           </div>
         </Link>
 
-        {/* AI Tokens 30d */}
+        {/* AI Credits 30d */}
         <Link
           href="/usage"
           className="group rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs transition-all hover:border-slate-300"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-slate-500">
-              AI Usage (30d)
+              AI Credits (30d)
             </span>
-            <Cpu
+            <Coins
               size={16}
               className="text-slate-400 group-hover:text-accent transition-colors"
             />
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="text-3xl font-semibold text-slate-900 tracking-tight">
-              {isLoading ? "—" : formatTokens(overview?.ai_telemetry_30d.total_tokens)}
+              {isLoading
+                ? "—"
+                : formatCredits(
+                    (overview?.ai_telemetry_30d as any)?.total_credits ??
+                      Math.max(0, Math.round((overview?.ai_telemetry_30d.total_tokens ?? 0) / 1000))
+                  )}
             </span>
-            <span className="text-xs text-slate-500 font-normal">Tokens</span>
+            <span className="text-xs text-slate-500 font-normal">Credits</span>
           </div>
           <div className="mt-2.5 text-xs text-slate-400 flex items-center justify-between">
             <span>
-              {overview?.ai_telemetry_30d.total_runs ?? 0} agent executions
+              {overview?.ai_telemetry_30d.total_runs ?? 0} agent tasks executed
             </span>
             <ArrowRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500" />
           </div>

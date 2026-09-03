@@ -79,10 +79,17 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (err: unknown) {
       if (err instanceof ApiClientError) {
-        const msg =
-          typeof err.data === "object" && err.data && "detail" in err.data
-            ? String((err.data as { detail: string }).detail)
-            : err.message;
+        let msg = err.message;
+        if (typeof err.data === "object" && err.data) {
+          const d = err.data as Record<string, unknown>;
+          if (d.detail) {
+            msg = String(d.detail);
+          } else if (Array.isArray(d.non_field_errors)) {
+            msg = d.non_field_errors.join(" ");
+          } else if (d.error) {
+            msg = String(d.error);
+          }
+        }
         setError(msg);
         throw new Error(msg);
       }

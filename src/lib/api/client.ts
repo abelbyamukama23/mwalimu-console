@@ -100,6 +100,10 @@ export async function apiRequest<T>(
     headers.set("Content-Type", "application/json");
   }
 
+  if (!headers.has("X-Client-Type")) {
+    headers.set("X-Client-Type", "institutional_console");
+  }
+
   const token = getAccessToken();
   if (token && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${token}`);
@@ -183,7 +187,11 @@ export const api = {
     async login(email: string, password: string): Promise<LoginResponse> {
       const data = await apiRequest<LoginResponse>("/api/v1/auth/login/", {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          email,
+          password,
+          client_type: "institutional_console",
+        }),
       });
       if (data.access) {
         setAccessToken(data.access);

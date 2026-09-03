@@ -77,7 +77,7 @@ function generateSlug(text: string): string {
 export default function OnboardingPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useSession();
-  const { createInstitution } = useInstitution();
+  const { institutions, isLoading: instLoading, createInstitution } = useInstitution();
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -89,8 +89,16 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push("/login");
+    } else if (
+      !authLoading &&
+      !instLoading &&
+      isAuthenticated &&
+      institutions.length > 0
+    ) {
+      // Once an institution exists for this account, onboarding is permanently sealed.
+      router.replace("/dashboard");
     }
-  }, [authLoading, isAuthenticated, router]);
+  }, [authLoading, instLoading, isAuthenticated, institutions.length, router]);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -133,30 +141,37 @@ export default function OnboardingPage() {
     }
   };
 
-  if (authLoading) {
+  if (authLoading || instLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-canvas">
-        <div className="text-xs text-slate-400">Loading session...</div>
+        <div className="text-xs text-slate-400">Verifying institutional credentials...</div>
       </div>
     );
+  }
+
+  // If the user already has an established institution, suppress rendering during redirect
+  if (institutions.length > 0) {
+    return null;
   }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-canvas p-6">
       <div className="w-full max-w-2xl rounded-xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs">
         <div className="mb-6">
-          <div className="flex items-center gap-1.5 mb-3">
+          <div className="flex items-center gap-1.5 mb-2">
             <span className="text-lg font-bold tracking-tight text-slate-900">mwalimu</span>
             <span className="rounded bg-slate-900 px-1.5 py-0.5 text-[10px] font-semibold text-white tracking-wide">
               Console
             </span>
+            <span className="ml-2 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-medium text-emerald-700 border border-emerald-200">
+              Setup: Who are you?
+            </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight">
-            Register Your Institutional Workspace
+            Who are you? (Set Up Your Workspace)
           </h1>
           <p className="mt-1 text-xs sm:text-[13px] text-slate-500">
-            Set up your organization. You will automatically become the primary
-            administrator of this learning workspace.
+            Select your institution type and organization name. Once established, your institutional profile is permanently bound to this administrative account.
           </p>
         </div>
 
