@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Cpu,
-  History,
+  Bell,
   Users,
   BookOpen,
   Shield,
@@ -39,7 +39,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: "dashboard", label: "Overview", href: "/dashboard", icon: LayoutDashboard },
       { id: "usage", label: "AI Usage", href: "/usage", icon: Cpu },
-      { id: "activity", label: "Audit Activity", href: "/activity", icon: History },
+      { id: "activity", label: "Notifications", href: "/activity", icon: Bell },
     ],
   },
   {

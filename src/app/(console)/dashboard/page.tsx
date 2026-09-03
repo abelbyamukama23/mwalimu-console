@@ -11,13 +11,14 @@ import {
   ArrowRight,
   CheckCircle2,
   AlertCircle,
-  History,
+  Bell,
   Network,
   RefreshCw,
 } from "lucide-react";
 import { useInstitution } from "../../../lib/institution/institution-context";
 import { api } from "../../../lib/api/client";
 import { InstitutionOverview, INSTITUTION_TYPE_LABELS } from "../../../types";
+import { formatNotification } from "../../../lib/notifications/format";
 
 export default function DashboardPage() {
   const { activeInstitution } = useInstitution();
@@ -282,70 +283,73 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Recent Audit Activity */}
+        {/* Recent Notifications & Activity */}
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs lg:col-span-2 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                <History size={16} className="text-accent" />
-                <span>Recent Administrative Audit Events</span>
+                <Bell size={16} className="text-slate-700" />
+                <span>Recent Notifications & Activity</span>
               </h2>
               <Link
                 href="/activity"
                 className="text-xs font-medium text-accent hover:underline flex items-center gap-1"
               >
-                <span>View Full Ledger</span>
+                <span>View All Notifications</span>
                 <ArrowRight size={12} />
               </Link>
             </div>
 
             {isLoading ? (
               <div className="py-8 text-center text-xs text-slate-400">
-                Loading recent events...
+                Loading recent notifications...
               </div>
             ) : overview?.recent_activity && overview.recent_activity.length > 0 ? (
-              <div className="overflow-hidden rounded-lg border border-slate-100">
-                <table className="min-w-full divide-y divide-slate-100 text-left text-xs">
-                  <thead className="bg-slate-50/80 text-slate-500 font-medium">
-                    <tr>
-                      <th className="px-3.5 py-2">Action</th>
-                      <th className="px-3.5 py-2">Target</th>
-                      <th className="px-3.5 py-2">Actor</th>
-                      <th className="px-3.5 py-2 text-right">Time</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
-                    {overview.recent_activity.map((event) => (
-                      <tr key={event.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="px-3.5 py-2 font-mono text-[11px] text-accent font-medium">
-                          {event.action}
-                        </td>
-                        <td className="px-3.5 py-2 font-medium text-slate-900 truncate max-w-[220px]">
-                          {event.target_repr}
-                        </td>
-                        <td className="px-3.5 py-2 text-slate-600">
-                          {event.actor_email || "System"}
-                        </td>
-                        <td className="px-3.5 py-2 text-right text-[11px] text-slate-400 whitespace-nowrap">
-                          {new Date(event.created_at).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="divide-y divide-slate-100 rounded-lg border border-slate-100 overflow-hidden">
+                {overview.recent_activity.map((event) => {
+                  const notif = formatNotification(event);
+                  return (
+                    <div
+                      key={notif.id}
+                      className="p-3 bg-white hover:bg-slate-50/60 transition-colors flex items-center justify-between gap-3 text-xs"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border shrink-0 ${notif.badge.bg} ${notif.badge.text} ${notif.badge.border}`}
+                        >
+                          {notif.badge.label}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="font-medium text-slate-900 truncate">
+                            {notif.title}
+                          </p>
+                          <p className="text-[11px] text-slate-400">
+                            {notif.actor} • {notif.timeAgo}
+                          </p>
+                        </div>
+                      </div>
+
+                      {notif.actionUrl && (
+                        <Link
+                          href={notif.actionUrl}
+                          className="text-[11px] font-medium text-slate-600 hover:text-slate-900 shrink-0 bg-slate-100 hover:bg-slate-200/80 px-2.5 py-1 rounded-lg transition-colors"
+                        >
+                          {notif.actionLabel || "View"}
+                        </Link>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <div className="py-8 text-center text-xs text-slate-400 rounded-lg border border-dashed border-slate-200">
-                No audit events recorded yet for this institution.
+                No notifications recorded yet for this institution.
               </div>
             )}
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-            <span>Ledger is strictly immutable and server-authoritative.</span>
+            <span>Real-time administrative updates and member requests.</span>
             <Link
               href="/connectors"
               className="text-accent hover:underline flex items-center gap-1 font-medium"
