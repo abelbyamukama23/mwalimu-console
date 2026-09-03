@@ -3,14 +3,14 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Building01Icon,
-  Home01Icon,
-  SchoolIcon,
-  Mortarboard01Icon,
-  Certificate01Icon,
-  Globe02Icon,
-  Folder01Icon,
-} from "hugeicons-react";
+  Building2,
+  Home,
+  School,
+  GraduationCap,
+  Award,
+  Globe,
+  Folder,
+} from "lucide-react";
 import { useSession } from "../../lib/auth/session-context";
 import { useInstitution } from "../../lib/institution/institution-context";
 import type { InstitutionType } from "../../types";
@@ -19,49 +19,49 @@ const TYPE_OPTIONS: Array<{
   type: InstitutionType;
   title: string;
   desc: string;
-  icon: typeof Building01Icon;
+  icon: typeof Building2;
 }> = [
   {
     type: "school",
     title: "School (K-12)",
     desc: "Primary, secondary, or unified school administration.",
-    icon: SchoolIcon,
+    icon: School,
   },
   {
     type: "university",
     title: "University / Higher Ed",
     desc: "Higher education faculties, deans, and academic departments.",
-    icon: Mortarboard01Icon,
+    icon: GraduationCap,
   },
   {
     type: "college",
     title: "College / Tertiary",
     desc: "Vocational colleges, polytechnics, and tertiary institutes.",
-    icon: Certificate01Icon,
+    icon: Award,
   },
   {
     type: "family",
     title: "Family Workspace",
     desc: "Parents and guardians managing learning libraries for children.",
-    icon: Home01Icon,
+    icon: Home,
   },
   {
     type: "training_center",
     title: "Training Center",
     desc: "Professional academies, bootcamps, and corporate trainers.",
-    icon: Building01Icon,
+    icon: Building2,
   },
   {
     type: "education_organization",
     title: "Educational NGO / Org",
     desc: "Non-profits, foundations, and educational programs.",
-    icon: Globe02Icon,
+    icon: Globe,
   },
   {
     type: "other",
     title: "Other Organization",
     desc: "Custom learning group, independent institute, or research lab.",
-    icon: Folder01Icon,
+    icon: Folder,
   },
 ];
 
@@ -136,36 +136,39 @@ export default function OnboardingPage() {
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-canvas">
-        <div className="text-xs text-ink-secondary">Loading session...</div>
+        <div className="text-xs text-slate-400">Loading session...</div>
       </div>
     );
   }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-canvas p-6">
-      <div className="w-full max-w-2xl rounded-xl border border-border bg-surface p-8 shadow-sm">
+      <div className="w-full max-w-2xl rounded-xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs">
         <div className="mb-6">
-          <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-white font-bold text-sm">
-            M
+          <div className="flex items-center gap-1.5 mb-3">
+            <span className="text-lg font-bold tracking-tight text-slate-900">mwalimu</span>
+            <span className="rounded bg-slate-900 px-1.5 py-0.5 text-[10px] font-semibold text-white tracking-wide">
+              Console
+            </span>
           </div>
-          <h1 className="text-xl font-semibold text-ink">
+          <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight">
             Register Your Institutional Workspace
           </h1>
-          <p className="mt-1 text-xs text-ink-secondary">
+          <p className="mt-1 text-xs sm:text-[13px] text-slate-500">
             Set up your organization. You will automatically become the primary
             administrator of this learning workspace.
           </p>
         </div>
 
         {error && (
-          <div className="mb-4 rounded-md border border-danger-fg/20 bg-danger-bg p-3 text-xs text-danger-fg">
+          <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           <div>
-            <label className="block text-xs font-semibold text-ink mb-1">
+            <label className="block font-medium text-slate-700 mb-1">
               Organization Name
             </label>
             <input
@@ -174,16 +177,16 @@ export default function OnboardingPage() {
               value={name}
               onChange={handleNameChange}
               placeholder="e.g. St. Jude High School, Makerere University, The Smith Family"
-              className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-tertiary focus-ring"
+              className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-accent focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-ink mb-1">
+            <label className="block font-medium text-slate-700 mb-1">
               Workspace URL Slug
             </label>
-            <div className="flex items-center rounded-md border border-border bg-surface px-3 py-2 focus-within:ring-2 focus-within:ring-accent focus-within:ring-offset-1">
-              <span className="text-xs text-ink-tertiary select-none">
+            <div className="flex h-9 items-center rounded-lg border border-slate-200 bg-slate-50/50 px-3 focus-within:bg-white focus-within:border-accent">
+              <span className="text-xs text-slate-400 select-none">
                 ai-mwalimu.com/inst/
               </span>
               <input
@@ -192,19 +195,19 @@ export default function OnboardingPage() {
                 value={slug}
                 onChange={handleSlugChange}
                 placeholder="st-jude-high"
-                className="w-full border-none bg-transparent p-0 text-sm text-ink outline-none"
+                className="w-full border-none bg-transparent p-0 text-xs text-slate-900 outline-none"
               />
             </div>
-            <p className="mt-1 text-[11px] text-ink-tertiary">
+            <p className="mt-1 text-[11px] text-slate-400">
               Unique identifier used for your workspace routing.
             </p>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-ink mb-2">
+            <label className="block font-medium text-slate-700 mb-2">
               Institution Classification
             </label>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {TYPE_OPTIONS.map((opt) => {
                 const Icon = opt.icon;
                 const isSelected = selectedType === opt.type;
@@ -213,23 +216,23 @@ export default function OnboardingPage() {
                     key={opt.type}
                     type="button"
                     onClick={() => setSelectedType(opt.type)}
-                    className={`flex items-start gap-3 rounded-lg border p-3 text-left transition-all ${
+                    className={`flex items-start gap-2.5 rounded-lg border p-2.5 text-left transition-all ${
                       isSelected
                         ? "border-accent bg-accent/5 ring-1 ring-accent"
-                        : "border-border bg-surface hover:bg-slate-50"
+                        : "border-slate-200 bg-white hover:bg-slate-50"
                     }`}
                   >
                     <Icon
-                      size={18}
+                      size={16}
                       className={`shrink-0 mt-0.5 ${
-                        isSelected ? "text-accent" : "text-ink-tertiary"
+                        isSelected ? "text-accent" : "text-slate-400"
                       }`}
                     />
                     <div>
-                      <div className="text-xs font-medium text-ink">
+                      <div className="text-xs font-medium text-slate-900">
                         {opt.title}
                       </div>
-                      <div className="text-[11px] text-ink-secondary leading-relaxed">
+                      <div className="text-[11px] text-slate-500 leading-normal">
                         {opt.desc}
                       </div>
                     </div>
@@ -239,11 +242,11 @@ export default function OnboardingPage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 border-t border-border pt-4">
+          <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-md bg-accent px-5 py-2.5 text-xs font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-50 focus-ring"
+              className="h-9 rounded-lg bg-slate-900 px-4 text-xs font-medium text-white transition-colors hover:bg-slate-800 disabled:opacity-50 shadow-xs"
             >
               {isSubmitting ? "Provisioning Workspace..." : "Create Workspace & Enter Console"}
             </button>

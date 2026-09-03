@@ -166,3 +166,147 @@ export interface RegisterResponse {
   requires_verification: boolean;
   message: string;
 }
+
+// =============================================================================
+// Phase 4 Intelligence & Governance Types
+// =============================================================================
+
+export interface InstitutionalAuditEvent {
+  id: string;
+  institution_id: string;
+  actor_id: string | null;
+  actor_email: string | null;
+  action: string;
+  target_type: string;
+  target_id: string;
+  target_repr: string;
+  metadata: Record<string, any>;
+  ip_address: string | null;
+  created_at: string;
+}
+
+export interface InstitutionOverview {
+  institution_id: string;
+  name: string;
+  slug: string;
+  institution_type: string;
+  status: string;
+  members: {
+    total_active: number;
+    pending: number;
+    by_role: Record<string, number>;
+  };
+  knowledge: {
+    total_libraries: number;
+    discoverable_libraries: number;
+    restricted_libraries: number;
+    total_resources: number;
+    resources_by_status: Record<string, number>;
+  };
+  integrations: {
+    total_connections: number;
+    active_connections: number;
+    error_connections: number;
+  };
+  ai_telemetry_30d: {
+    total_tokens: number;
+    total_runs: number;
+    active_users: number;
+  };
+  health: {
+    status: "healthy" | "attention_needed";
+    stuck_processing_count: number;
+    failed_ingestion_count: number;
+    failed_sync_count: number;
+  };
+  recent_activity: InstitutionalAuditEvent[];
+}
+
+export interface AIUsageTelemetry {
+  institution_id: string;
+  start_date: string;
+  end_date: string;
+  summary: {
+    total_tokens: number;
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_runs: number;
+    completed_runs: number;
+    failed_runs: number;
+    cancelled_runs: number;
+    timed_out_runs: number;
+    active_users: number;
+  };
+  timeline: Array<{
+    date: string;
+    total_tokens: number;
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_runs: number;
+  }>;
+  top_users: Array<{
+    user_id: string;
+    email: string;
+    total_tokens: number;
+    total_runs: number;
+  }>;
+}
+
+export interface ConnectorSummary {
+  id: string;
+  name: string;
+  slug: string;
+  connector_type: string;
+  auth_type: string;
+}
+
+export interface InstitutionConnection {
+  id: string;
+  library_id: string;
+  library_name?: string;
+  connector: ConnectorSummary;
+  name: string;
+  status: "active" | "inactive" | "error" | "syncing";
+  sync_frequency: "manual" | "hourly" | "daily" | "weekly";
+  last_synced_at: string | null;
+  last_sync_status: "success" | "partial" | "failed" | null;
+  last_sync_error: string;
+  has_credentials: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ConnectionSyncJob {
+  id: string;
+  connection_id: string;
+  status: "queued" | "running" | "completed" | "failed" | "cancelled";
+  celery_task_id: string | null;
+  resources_discovered: number;
+  resources_created: number;
+  resources_updated: number;
+  resources_deleted: number;
+  error_code: string | null;
+  error_message: string;
+  started_at: string | null;
+  finished_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GeographicUnit {
+  id: string;
+  name: string;
+  unit_type: string;
+  code?: string;
+  parent_id?: string | null;
+}
+
+export interface InstitutionContextRegion {
+  id: string;
+  institution_id: string;
+  geographic_unit: GeographicUnit;
+  priority: number;
+  created_at: string;
+  updated_at: string;
+}
+

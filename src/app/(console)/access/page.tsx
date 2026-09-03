@@ -2,19 +2,19 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  LockKeyIcon,
-  PlusSignIcon,
-  Search01Icon,
-  FilterIcon,
-  Delete02Icon,
-  Alert02Icon,
-  CheckmarkCircle01Icon,
-  Cancel01Icon,
-  Book02Icon,
-  UserIcon,
-  Shield01Icon,
-  SecurityCheckIcon,
-} from "hugeicons-react";
+  Lock,
+  Plus,
+  Search,
+  Filter,
+  Trash2,
+  AlertCircle,
+  CheckCircle2,
+  X,
+  BookOpen,
+  User,
+  Shield,
+  ShieldCheck,
+} from "lucide-react";
 import { api, ApiClientError } from "../../../lib/api/client";
 import { useInstitution } from "../../../lib/institution/institution-context";
 import type {
@@ -58,35 +58,31 @@ export default function AccessPage() {
   const [grantRole, setGrantRole] = useState<LibraryAccessRole>("student");
   const [isGranting, setIsGranting] = useState(false);
 
-  // Revoke Confirmation Modal
+  // Mutation trackers
+  const [mutatingPolicyId, setMutatingPolicyId] = useState<string | null>(null);
+
+  // Revoke State
   const [policyToRevoke, setPolicyToRevoke] = useState<LibraryAccessPolicy | null>(null);
   const [isRevoking, setIsRevoking] = useState(false);
 
-  // Mutation in-flight tracker
-  const [mutatingPolicyId, setMutatingPolicyId] = useState<string | null>(null);
-
-  // 1. Fetch libraries & members for active institution
-  const fetchLibrariesAndMembers = useCallback(async () => {
+  // 1. Fetch libraries
+  const fetchLibraries = useCallback(async () => {
     if (!activeInstitutionId) {
       setLibraries([]);
       setSelectedLibraryId("");
-      setMemberships([]);
       setIsLibrariesLoading(false);
       return;
     }
 
     setIsLibrariesLoading(true);
     try {
-      const [libRes, memRes] = await Promise.all([
-        api.libraries.list({ institution_id: activeInstitutionId }),
-        api.memberships.list({ institution_id: activeInstitutionId }),
-      ]);
-      setLibraries(libRes.results);
-      setMemberships(memRes.results.filter((m) => m.status === "active"));
-
-      if (libRes.results.length > 0) {
+      const res = await api.libraries.list({
+        institution_id: activeInstitutionId,
+      });
+      setLibraries(res.results);
+      if (res.results.length > 0) {
         setSelectedLibraryId((prev) =>
-          libRes.results.some((l) => l.id === prev) ? prev : libRes.results[0].id
+          res.results.some((l) => l.id === prev) ? prev : res.results[0].id
         );
       } else {
         setSelectedLibraryId("");
@@ -99,10 +95,19 @@ export default function AccessPage() {
   }, [activeInstitutionId]);
 
   useEffect(() => {
-    fetchLibrariesAndMembers();
-  }, [fetchLibrariesAndMembers]);
+    fetchLibraries();
+  }, [fetchLibraries]);
 
-  // 2. Fetch policies for selected library
+  // 2. Fetch institution members (for granting)
+  useEffect(() => {
+    if (!activeInstitutionId) return;
+    api.memberships
+      .list({ institution_id: activeInstitutionId })
+      .then((res) => setMemberships(res.results.filter((m) => m.status === "active")))
+      .catch(() => setMemberships([]));
+  }, [activeInstitutionId]);
+
+  // 3. Fetch policies for selected library
   const fetchPolicies = useCallback(async () => {
     if (!selectedLibraryId) {
       setPolicies([]);
@@ -130,7 +135,34 @@ export default function AccessPage() {
     fetchPolicies();
   }, [fetchPolicies]);
 
-  // 3. Grant access handler
+  // 4. Role mutation
+  const handleRoleChange = async (
+    policyId: string,
+    newRole: LibraryAccessRole
+  ) => {
+    if (!selectedLibraryId) return;
+    setMutatingPolicyId(policyId);
+    setActionError(null);
+    setActionSuccess(null);
+
+    try {
+      const updated = await api.accessPolicies.update(
+        selectedLibraryId,
+        policyId,
+        { role: newRole }
+      );
+      setPolicies((prev) =>
+        prev.map((p) => (p.id === policyId ? { ...p, role: updated.role } : p))
+      );
+      setActionSuccess(`Access role updated to ${newRole}.`);
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : "Failed to update access policy.");
+    } finally {
+      setMutatingPolicyId(null);
+    }
+  };
+
+  // 5. Grant Access
   const handleGrant = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedLibraryId || !grantUserId) return;
@@ -140,12 +172,12 @@ export default function AccessPage() {
     setActionSuccess(null);
 
     try {
-      const newPolicy = await api.accessPolicies.grant(selectedLibraryId, {
+      const created = await api.accessPolicies.grant(selectedLibraryId, {
         user_id: grantUserId,
         role: grantRole,
       });
-      setPolicies((prev) => [newPolicy, ...prev]);
-      setActionSuccess(`Access granted to ${newPolicy.user.email} (${grantRole}).`);
+      setPolicies((prev) => [created, ...prev]);
+      setActionSuccess(`Granted ${grantRole} access to ${created.user.email}.`);
       setIsGrantOpen(false);
       setGrantUserId("");
       setGrantRole("student");
@@ -156,40 +188,19 @@ export default function AccessPage() {
     }
   };
 
-  // 4. Update policy role
-  const handleRoleChange = async (policyId: string, newRole: LibraryAccessRole) => {
-    if (!selectedLibraryId) return;
-    setMutatingPolicyId(policyId);
-    setActionError(null);
-    setActionSuccess(null);
-
-    try {
-      const updated = await api.accessPolicies.update(selectedLibraryId, policyId, {
-        role: newRole,
-      });
-      setPolicies((prev) => prev.map((p) => (p.id === policyId ? updated : p)));
-      setActionSuccess(`Policy updated to ${newRole}.`);
-    } catch (err: unknown) {
-      setActionError(err instanceof Error ? err.message : "Failed to update role grant.");
-    } finally {
-      setMutatingPolicyId(null);
-    }
-  };
-
-  // 5. Revoke access handler
+  // 6. Revoke Access
   const handleConfirmRevoke = async () => {
     if (!selectedLibraryId || !policyToRevoke) return;
     setIsRevoking(true);
     setActionError(null);
-    setActionSuccess(null);
 
     try {
       await api.accessPolicies.revoke(selectedLibraryId, policyToRevoke.id);
       setPolicies((prev) => prev.filter((p) => p.id !== policyToRevoke.id));
-      setActionSuccess(`Revoked access for ${policyToRevoke.user.email}.`);
+      setActionSuccess(`Revoked access policy for ${policyToRevoke.user.email}.`);
       setPolicyToRevoke(null);
     } catch (err: unknown) {
-      setActionError(err instanceof Error ? err.message : "Failed to revoke access.");
+      setActionError(err instanceof Error ? err.message : "Failed to revoke access policy.");
     } finally {
       setIsRevoking(false);
     }
@@ -206,13 +217,11 @@ export default function AccessPage() {
     });
   }, [policies, searchQuery, roleFilter]);
 
-  // Available members to grant (exclude those who already have a policy)
+  // Members not yet granted on this library
   const availableMembers = useMemo(() => {
     const grantedUserIds = new Set(policies.map((p) => p.user.id));
     return memberships.filter((m) => !grantedUserIds.has(m.user.id));
   }, [memberships, policies]);
-
-  const selectedLibrary = libraries.find((l) => l.id === selectedLibraryId);
 
   const getRoleBadgeStyle = (role: LibraryAccessRole) => {
     switch (role) {
@@ -225,30 +234,32 @@ export default function AccessPage() {
     }
   };
 
+  const selectedLibrary = libraries.find((l) => l.id === selectedLibraryId);
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <div className="flex items-center gap-2 text-xs text-ink-tertiary">
+        <div className="flex items-center gap-1.5 text-xs text-slate-400">
           <span>{activeInstitution?.name || "Workspace"}</span>
           <span>/</span>
-          <span className="text-ink-secondary">Access</span>
+          <span className="text-slate-600 font-medium">Access Policies</span>
         </div>
-        <div className="mt-2 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="mt-1 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
           <div>
-            <h1 className="text-2xl font-semibold text-ink">
-              Library Access & RBAC
+            <h1 className="text-2xl sm:text-[26px] font-semibold text-slate-900 tracking-tight">
+              Library Access (RBAC)
             </h1>
-            <p className="mt-1 text-xs text-ink-secondary">
-              Grant and govern role-based access permissions for institutional knowledge containers.
+            <p className="mt-0.5 text-xs sm:text-[13px] text-slate-500">
+              Enforce role-based access boundaries on institutional knowledge libraries and courses.
             </p>
           </div>
           {selectedLibraryId && (
             <button
               onClick={() => setIsGrantOpen(true)}
-              className="inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-accent-hover focus-ring"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-slate-900 px-3 text-xs font-medium text-white hover:bg-slate-800 shadow-xs transition-colors"
             >
-              <PlusSignIcon size={16} />
+              <Plus size={13} />
               <span>Grant Member Access</span>
             </button>
           )}
@@ -259,14 +270,14 @@ export default function AccessPage() {
       {actionSuccess && (
         <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
           <div className="flex items-center gap-2">
-            <CheckmarkCircle01Icon size={16} className="shrink-0" />
+            <CheckCircle2 size={15} className="shrink-0" />
             <span>{actionSuccess}</span>
           </div>
           <button
             onClick={() => setActionSuccess(null)}
             className="text-emerald-600 hover:text-emerald-900"
           >
-            <Cancel01Icon size={14} />
+            <X size={14} />
           </button>
         </div>
       )}
@@ -274,28 +285,28 @@ export default function AccessPage() {
       {actionError && (
         <div className="flex items-center justify-between rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
           <div className="flex items-center gap-2">
-            <Alert02Icon size={16} className="shrink-0 text-rose-600" />
+            <AlertCircle size={15} className="shrink-0 text-rose-600" />
             <span>{actionError}</span>
           </div>
           <button
             onClick={() => setActionError(null)}
             className="text-rose-600 hover:text-rose-900"
           >
-            <Cancel01Icon size={14} />
+            <X size={14} />
           </button>
         </div>
       )}
 
       {/* Library Selector Banner */}
-      <div className="rounded-xl border border-border bg-surface p-4 shadow-xs">
+      <div className="rounded-xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-xs">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2.5">
-            <Book02Icon size={18} className="text-accent" />
+          <div className="flex items-center gap-2">
+            <BookOpen size={16} className="text-accent" />
             <div>
-              <div className="text-xs font-semibold text-ink">
+              <div className="text-xs font-semibold text-slate-900">
                 Selected Knowledge Container
               </div>
-              <div className="text-[11px] text-ink-tertiary">
+              <div className="text-[11px] text-slate-400">
                 Choose the library whose access policies you want to govern.
               </div>
             </div>
@@ -303,7 +314,7 @@ export default function AccessPage() {
 
           <div className="flex items-center gap-2">
             {isLibrariesLoading ? (
-              <span className="text-xs text-ink-tertiary">Loading libraries...</span>
+              <span className="text-xs text-slate-400">Loading libraries...</span>
             ) : libraries.length === 0 ? (
               <span className="text-xs text-amber-600">
                 No libraries found. Create an institutional library first.
@@ -312,7 +323,7 @@ export default function AccessPage() {
               <select
                 value={selectedLibraryId}
                 onChange={(e) => setSelectedLibraryId(e.target.value)}
-                className="rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-ink focus-ring"
+                className="h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-medium text-slate-700 focus:border-accent focus:outline-none"
               >
                 {libraries.map((lib) => (
                   <option key={lib.id} value={lib.id}>
@@ -327,110 +338,111 @@ export default function AccessPage() {
 
       {/* Filter and Search Bar */}
       {selectedLibraryId && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative flex-1 max-w-sm">
-            <Search01Icon
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-tertiary"
+            <Search
+              size={14}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
             />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Filter granted members by email..."
-              className="w-full rounded-md border border-border bg-surface pl-9 pr-3 py-2 text-xs text-ink placeholder:text-ink-tertiary focus-ring"
+              className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50/50 pl-8 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-accent focus:outline-none transition-colors"
             />
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs text-ink-secondary">
-              <FilterIcon size={14} className="text-ink-tertiary" />
-              <select
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-                className="border-none bg-transparent p-0 text-xs text-ink focus:outline-none"
-              >
-                <option value="all">All Granted Roles</option>
-                <option value="student">Students</option>
-                <option value="teacher">Teachers</option>
-                <option value="administrator">Administrators</option>
-              </select>
+            <div className="flex items-center gap-1 text-slate-500 text-xs font-medium mr-0.5">
+              <Filter size={13} className="text-slate-400" />
+              <span>Role:</span>
             </div>
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 focus:border-accent focus:outline-none"
+            >
+              <option value="all">All Granted Roles</option>
+              <option value="student">Students</option>
+              <option value="teacher">Teachers</option>
+              <option value="administrator">Administrators</option>
+            </select>
           </div>
         </div>
       )}
 
       {/* Policies Table */}
       {!selectedLibraryId ? (
-        <div className="rounded-xl border border-dashed border-border bg-surface p-12 text-center text-xs text-ink-tertiary">
+        <div className="rounded-xl border border-dashed border-slate-200 bg-white p-12 text-center text-xs text-slate-400">
           Select or create an institutional library to inspect its access policies.
         </div>
       ) : isPoliciesLoading ? (
-        <div className="rounded-xl border border-border bg-surface p-12 text-center text-xs text-ink-secondary">
+        <div className="rounded-xl border border-slate-200 bg-white p-12 text-center text-xs text-slate-400">
           Loading access policies for {selectedLibrary?.name}...
         </div>
       ) : error ? (
-        <div className="rounded-xl border border-border bg-surface p-12 text-center text-xs text-danger-fg">
+        <div className="rounded-xl border border-slate-200 bg-white p-12 text-center text-xs text-rose-700">
           <p>{error}</p>
           <button
             onClick={fetchPolicies}
-            className="mt-3 rounded-md bg-accent px-3 py-1.5 text-xs text-white"
+            className="mt-2 h-8 rounded-lg bg-slate-900 px-3 text-xs font-medium text-white hover:bg-slate-800"
           >
             Retry
           </button>
         </div>
       ) : filteredPolicies.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-surface p-12 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent/10 text-accent mb-3">
-            <LockKeyIcon size={24} />
+        <div className="rounded-xl border border-dashed border-slate-200 bg-white p-12 text-center">
+          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-accent mb-2">
+            <Lock size={18} />
           </div>
-          <h3 className="text-sm font-semibold text-ink">No individual access policies</h3>
-          <p className="mx-auto mt-1 max-w-sm text-xs text-ink-tertiary">
+          <h3 className="text-xs font-semibold text-slate-900">No individual access policies</h3>
+          <p className="mx-auto mt-0.5 max-w-sm text-xs text-slate-400">
             {selectedLibrary?.visibility === "discoverable"
               ? "This library is discoverable to all active members of this institution. You can grant specific elevated roles below."
               : "This library is restricted. Only members with an explicit access policy granted below can access it."}
           </p>
           <button
             onClick={() => setIsGrantOpen(true)}
-            className="mt-4 inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-accent-hover"
+            className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-lg bg-slate-900 px-3 text-xs font-medium text-white transition-colors hover:bg-slate-800 shadow-xs"
           >
-            <PlusSignIcon size={16} />
+            <Plus size={13} />
             <span>Grant Access Policy</span>
           </button>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-xs">
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-border bg-slate-50/50 text-[11px] font-semibold text-ink-secondary uppercase tracking-wider">
+            <table className="w-full text-left text-xs divide-y divide-slate-100">
+              <thead className="bg-slate-50/80 text-slate-500 font-medium">
                 <tr>
-                  <th className="px-4 py-3">Granted Member</th>
-                  <th className="px-4 py-3">Access Role</th>
-                  <th className="px-4 py-3">Granted Date</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <th className="px-3.5 py-2">Granted Member</th>
+                  <th className="px-3.5 py-2">Access Role</th>
+                  <th className="px-3.5 py-2">Granted Date</th>
+                  <th className="px-3.5 py-2 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-slate-100 bg-white">
                 {filteredPolicies.map((policy) => {
                   const isMutating = mutatingPolicyId === policy.id;
                   return (
-                    <tr key={policy.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-4 py-3.5">
+                    <tr key={policy.id} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="px-3.5 py-2.5">
                         <div className="flex items-center gap-2.5">
-                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-ink-secondary font-medium">
-                            <UserIcon size={14} />
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-600 font-medium">
+                            <User size={13} />
                           </div>
                           <div>
-                            <div className="font-medium text-ink">
+                            <div className="font-medium text-slate-900">
                               {policy.user.email}
                             </div>
-                            <div className="text-[10px] text-ink-tertiary font-mono">
+                            <div className="text-[10px] text-slate-400 font-mono">
                               User ID: {policy.user.id.slice(0, 8)}...
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-3.5 py-2.5">
                         <select
                           disabled={isMutating}
                           value={policy.role}
@@ -440,7 +452,7 @@ export default function AccessPage() {
                               e.target.value as LibraryAccessRole
                             )
                           }
-                          className={`rounded border px-2 py-1 text-[11px] font-medium transition-colors focus-ring ${getRoleBadgeStyle(
+                          className={`rounded border px-2 py-0.5 text-[11px] font-medium transition-colors focus:outline-none ${getRoleBadgeStyle(
                             policy.role
                           )}`}
                         >
@@ -449,21 +461,21 @@ export default function AccessPage() {
                           <option value="administrator">Administrator</option>
                         </select>
                       </td>
-                      <td className="px-4 py-3.5 text-ink-secondary whitespace-nowrap">
+                      <td className="px-3.5 py-2.5 text-slate-500 whitespace-nowrap">
                         {new Date(policy.created_at).toLocaleDateString(undefined, {
                           year: "numeric",
                           month: "short",
                           day: "numeric",
                         })}
                       </td>
-                      <td className="px-4 py-3.5 text-right">
+                      <td className="px-3.5 py-2.5 text-right">
                         <button
                           disabled={isMutating}
                           onClick={() => setPolicyToRevoke(policy)}
                           title="Revoke access"
-                          className="rounded p-1 text-ink-tertiary hover:bg-rose-50 hover:text-rose-600 transition-colors disabled:opacity-50"
+                          className="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors disabled:opacity-50"
                         >
-                          <Delete02Icon size={16} />
+                          <Trash2 size={14} />
                         </button>
                       </td>
                     </tr>
@@ -478,35 +490,35 @@ export default function AccessPage() {
       {/* Grant Access Modal */}
       {isGrantOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs"
           onClick={() => !isGranting && setIsGrantOpen(false)}
         >
           <div
-            className="w-full max-w-md rounded-xl border border-border bg-surface p-6 shadow-xl"
+            className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3.5">
               <div className="flex items-center gap-2">
-                <LockKeyIcon size={18} className="text-accent" />
-                <h3 className="text-sm font-semibold text-ink">
+                <Lock size={16} className="text-accent" />
+                <h3 className="text-sm font-semibold text-slate-900">
                   Grant Access: {selectedLibrary?.name}
                 </h3>
               </div>
               <button
                 onClick={() => setIsGrantOpen(false)}
-                className="text-ink-tertiary hover:text-ink"
+                className="text-slate-400 hover:text-slate-700"
               >
-                <Cancel01Icon size={16} />
+                <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleGrant} className="space-y-4">
+            <form onSubmit={handleGrant} className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1">
+                <label className="block font-medium text-slate-700 mb-1">
                   Enrolled Institutional Member
                 </label>
                 {availableMembers.length === 0 ? (
-                  <p className="rounded-md bg-slate-50 p-3 text-xs text-ink-tertiary">
+                  <p className="rounded-lg bg-slate-50 border border-slate-200 p-2.5 text-xs text-slate-500">
                     All currently active members of this workspace already have an access policy on this library.
                   </p>
                 ) : (
@@ -514,7 +526,7 @@ export default function AccessPage() {
                     required
                     value={grantUserId}
                     onChange={(e) => setGrantUserId(e.target.value)}
-                    className="w-full rounded-md border border-border bg-surface px-3 py-2 text-xs text-ink focus-ring"
+                    className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 text-xs text-slate-900 focus:bg-white focus:border-accent focus:outline-none"
                   >
                     <option value="">Select a member...</option>
                     {availableMembers.map((m) => (
@@ -527,7 +539,7 @@ export default function AccessPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1">
+                <label className="block font-medium text-slate-700 mb-1">
                   Library Role Grant
                 </label>
                 <select
@@ -535,7 +547,7 @@ export default function AccessPage() {
                   onChange={(e) =>
                     setGrantRole(e.target.value as LibraryAccessRole)
                   }
-                  className="w-full rounded-md border border-border bg-surface px-3 py-2 text-xs text-ink focus-ring"
+                  className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 text-xs text-slate-900 focus:bg-white focus:border-accent focus:outline-none"
                 >
                   {ACCESS_ROLE_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -545,19 +557,19 @@ export default function AccessPage() {
                 </select>
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 border-t border-border pt-4">
+              <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
                 <button
                   type="button"
                   disabled={isGranting}
                   onClick={() => setIsGrantOpen(false)}
-                  className="rounded-md border border-border px-3.5 py-2 text-xs font-medium text-ink hover:bg-slate-50"
+                  className="h-8 rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-600 hover:bg-slate-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isGranting || !grantUserId}
-                  className="rounded-md bg-accent px-4 py-2 text-xs font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+                  className="h-8 rounded-lg bg-slate-900 px-3 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50 shadow-xs"
                 >
                   {isGranting ? "Granting..." : "Grant Access Policy"}
                 </button>
@@ -570,38 +582,38 @@ export default function AccessPage() {
       {/* Revoke Confirmation Modal */}
       {policyToRevoke && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs"
           onClick={() => !isRevoking && setPolicyToRevoke(null)}
         >
           <div
-            className="w-full max-w-md rounded-xl border border-border bg-surface p-6 shadow-xl"
+            className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center gap-3 text-danger-fg mb-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-danger-bg">
-                <Alert02Icon size={20} />
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-50 text-rose-600 shrink-0">
+                <AlertCircle size={18} />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-ink">Revoke Access</h3>
-                <p className="text-xs text-ink-secondary">
+                <h3 className="text-sm font-semibold text-slate-900">Revoke Access</h3>
+                <p className="text-xs text-slate-500">
                   Revoking access policy grant.
                 </p>
               </div>
             </div>
 
-            <p className="text-xs text-ink-secondary leading-relaxed mb-4">
+            <p className="text-xs text-slate-600 leading-relaxed mb-4">
               Are you sure you want to revoke access to{" "}
-              <strong className="text-ink">{selectedLibrary?.name}</strong> for{" "}
-              <strong className="text-ink">{policyToRevoke.user.email}</strong>?
+              <strong className="text-slate-900">{selectedLibrary?.name}</strong> for{" "}
+              <strong className="text-slate-900">{policyToRevoke.user.email}</strong>?
               If this library is restricted, they will no longer be able to read or query its resources.
             </p>
 
-            <div className="flex items-center justify-end gap-2.5">
+            <div className="flex items-center justify-end gap-2">
               <button
                 type="button"
                 disabled={isRevoking}
                 onClick={() => setPolicyToRevoke(null)}
-                className="rounded-md border border-border px-3.5 py-2 text-xs font-medium text-ink hover:bg-slate-50"
+                className="h-8 rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-600 hover:bg-slate-50"
               >
                 Cancel
               </button>
@@ -609,7 +621,7 @@ export default function AccessPage() {
                 type="button"
                 disabled={isRevoking}
                 onClick={handleConfirmRevoke}
-                className="rounded-md bg-rose-600 px-4 py-2 text-xs font-medium text-white hover:bg-rose-700 disabled:opacity-50"
+                className="h-8 rounded-lg bg-rose-600 px-3.5 text-xs font-medium text-white hover:bg-rose-700 disabled:opacity-50 shadow-xs"
               >
                 {isRevoking ? "Revoking..." : "Confirm Revocation"}
               </button>

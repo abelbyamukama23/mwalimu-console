@@ -24,6 +24,14 @@ import type {
   RegisterResponse,
   Resource,
   User,
+  InstitutionOverview,
+  AIUsageTelemetry,
+  InstitutionalAuditEvent,
+  ConnectorSummary,
+  InstitutionConnection,
+  ConnectionSyncJob,
+  InstitutionContextRegion,
+  GeographicUnit,
 } from "../../types";
 
 export class ApiClientError extends Error {
@@ -263,6 +271,54 @@ export const api = {
         body: JSON.stringify(data),
       });
     },
+
+    async getOverview(id: string): Promise<InstitutionOverview> {
+      return apiRequest<InstitutionOverview>(
+        `/api/v1/institutions/${id}/overview/`,
+        { method: "GET" }
+      );
+    },
+
+    async getUsage(
+      id: string,
+      params?: { start_date?: string; end_date?: string }
+    ): Promise<AIUsageTelemetry> {
+      const q = new URLSearchParams();
+      if (params?.start_date) q.append("start_date", params.start_date);
+      if (params?.end_date) q.append("end_date", params.end_date);
+      const queryStr = q.toString() ? `?${q.toString()}` : "";
+      return apiRequest<AIUsageTelemetry>(
+        `/api/v1/institutions/${id}/usage/${queryStr}`,
+        { method: "GET" }
+      );
+    },
+
+    async getAuditLogs(
+      id: string,
+      params?: { action?: string; target_type?: string; search?: string; page?: number }
+    ): Promise<{ results: InstitutionalAuditEvent[]; count: number }> {
+      const q = new URLSearchParams();
+      if (params?.action) q.append("action", params.action);
+      if (params?.target_type) q.append("target_type", params.target_type);
+      if (params?.search) q.append("search", params.search);
+      if (params?.page) q.append("page", String(params.page));
+      const queryStr = q.toString() ? `?${q.toString()}` : "";
+      const res = await apiRequest<any>(
+        `/api/v1/institutions/${id}/audit-logs/${queryStr}`,
+        { method: "GET" }
+      );
+      if (Array.isArray(res)) {
+        return { results: res, count: res.length };
+      }
+      return res;
+    },
+
+    async getConnections(id: string): Promise<InstitutionConnection[]> {
+      return apiRequest<InstitutionConnection[]>(
+        `/api/v1/institutions/${id}/connections/`,
+        { method: "GET" }
+      );
+    },
   },
 
   memberships: {
@@ -461,6 +517,140 @@ export const api = {
         `/api/v1/libraries/${libraryId}/access-policies/${policyId}/`,
         { method: "DELETE" }
       );
+    },
+  },
+
+  connectors: {
+    async list(): Promise<ConnectorSummary[]> {
+      const res = await apiRequest<any>("/api/v1/connectors/", {
+        method: "GET",
+      });
+      if (Array.isArray(res)) {
+        return res;
+      }
+      return res?.results || [];
+    },
+
+    async listConnections(libraryId: string): Promise<InstitutionConnection[]> {
+      const res = await apiRequest<any>(
+        `/api/v1/libraries/${libraryId}/connections/`,
+        { method: "GET" }
+      );
+      if (Array.isArray(res)) {
+        return res;
+      }
+      return res?.results || [];
+    },
+
+    async createConnection(
+      libraryId: string,
+      data: {
+        connector_id: string;
+        name: string;
+        configuration?: Record<string, any>;
+        credentials?: Record<string, any>;
+        sync_frequency?: string;
+      }
+    ): Promise<InstitutionConnection> {
+      return apiRequest<InstitutionConnection>(
+        `/api/v1/libraries/${libraryId}/connections/`,
+        {
+          method: "POST",
+          body: JSON.stringify(data),
+        }
+      );
+    },
+
+    async deleteConnection(
+      libraryId: string,
+      connectionId: string
+    ): Promise<void> {
+      return apiRequest<void>(
+        `/api/v1/libraries/${libraryId}/connections/${connectionId}/`,
+        { method: "DELETE" }
+      );
+    },
+
+    async triggerSync(
+      libraryId: string,
+      connectionId: string
+    ): Promise<ConnectionSyncJob> {
+      return apiRequest<ConnectionSyncJob>(
+        `/api/v1/libraries/${libraryId}/connections/${connectionId}/sync/`,
+        { method: "POST" }
+      );
+    },
+
+    async listSyncJobs(
+      libraryId: string,
+      connectionId: string
+    ): Promise<ConnectionSyncJob[]> {
+      const res = await apiRequest<any>(
+        `/api/v1/libraries/${libraryId}/connections/${connectionId}/sync-jobs/`,
+        { method: "GET" }
+      );
+      if (Array.isArray(res)) {
+        return res;
+      }
+      return res?.results || [];
+    },
+  },
+
+  contextRegions: {
+    async list(institutionId: string): Promise<InstitutionContextRegion[]> {
+      const res = await apiRequest<any>(
+        `/api/v1/institutions/${institutionId}/context-regions/`,
+        { method: "GET" }
+      );
+      if (Array.isArray(res)) {
+        return res;
+      }
+      return res?.results || [];
+    },
+
+    async create(
+      institutionId: string,
+      data: { geographic_unit_id: string; priority?: number }
+    ): Promise<InstitutionContextRegion> {
+      return apiRequest<InstitutionContextRegion>(
+        `/api/v1/institutions/${institutionId}/context-regions/`,
+        {
+          method: "POST",
+          body: JSON.stringify(data),
+        }
+      );
+    },
+
+    async delete(institutionId: string, regionId: string): Promise<void> {
+      return apiRequest<void>(
+        `/api/v1/institutions/${institutionId}/context-regions/${regionId}/`,
+        { method: "DELETE" }
+      );
+    },
+
+    async reorder(
+      institutionId: string,
+      regionIds: string[]
+    ): Promise<InstitutionContextRegion[]> {
+      return apiRequest<InstitutionContextRegion[]>(
+        `/api/v1/institutions/${institutionId}/context-regions/reorder/`,
+        {
+          method: "PUT",
+          body: JSON.stringify({ region_ids: regionIds }),
+        }
+      );
+    },
+  },
+
+  geographicUnits: {
+    async list(): Promise<{ results: GeographicUnit[]; count: number }> {
+      const res = await apiRequest<any>("/api/v1/context/geographic-units/", {
+        method: "GET",
+      });
+      if (Array.isArray(res)) {
+        return { results: res, count: res.length };
+      }
+      return res;
     },
   },
 };
