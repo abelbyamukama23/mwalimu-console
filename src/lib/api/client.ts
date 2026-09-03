@@ -100,10 +100,6 @@ export async function apiRequest<T>(
     headers.set("Content-Type", "application/json");
   }
 
-  if (!headers.has("X-Client-Type")) {
-    headers.set("X-Client-Type", "institutional_console");
-  }
-
   const token = getAccessToken();
   if (token && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${token}`);
