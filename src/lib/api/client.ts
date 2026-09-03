@@ -12,9 +12,17 @@ import {
 import type {
   Institution,
   InstitutionType,
+  Library,
+  LibraryAccessPolicy,
+  LibraryAccessRole,
+  LibraryVisibility,
   LoginResponse,
   Membership,
+  MembershipRole,
+  MembershipStatus,
+  ProcessingRunStatus,
   RegisterResponse,
+  Resource,
   User,
 } from "../../types";
 
@@ -120,7 +128,6 @@ export async function apiRequest<T>(
         response = await fetch(url, { ...config, headers });
       }
     } else {
-      // Queue requests until refresh resolves
       const newToken = await new Promise<string | null>((resolve) => {
         subscribeTokenRefresh((t) => resolve(t));
       });
@@ -138,10 +145,20 @@ export async function apiRequest<T>(
     } catch {
       errorData = await response.text();
     }
-    const message =
-      typeof errorData === "object" && errorData && "detail" in errorData
-        ? String((errorData as { detail: string }).detail)
-        : `Request failed with status ${response.status}`;
+
+    let message = `Request failed with status ${response.status}`;
+    if (typeof errorData === "object" && errorData !== null) {
+      if ("detail" in errorData) {
+        message = String((errorData as { detail: string }).detail);
+      } else if ("error" in errorData) {
+        message = String((errorData as { error: string }).error);
+      } else {
+        const fieldErrors = Object.entries(errorData as Record<string, unknown>)
+          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+          .join(" | ");
+        if (fieldErrors) message = fieldErrors;
+      }
+    }
 
     throw new ApiClientError(message, response.status, errorData);
   }
@@ -155,7 +172,7 @@ export async function apiRequest<T>(
 
 export const api = {
   auth: {
-    async login(email: string, password: string):Promise<LoginResponse> {
+    async login(email: string, password: string): Promise<LoginResponse> {
       const data = await apiRequest<LoginResponse>("/api/v1/auth/login/", {
         method: "POST",
         body: JSON.stringify({ email, password }),
@@ -258,6 +275,191 @@ export const api = {
       return apiRequest<{ results: Membership[]; count: number }>(
         `/api/v1/memberships/${query}`,
         { method: "GET" }
+      );
+    },
+
+    async update(
+      id: string,
+      data: { role?: MembershipRole; status?: MembershipStatus }
+    ): Promise<Membership> {
+      return apiRequest<Membership>(`/api/v1/memberships/${id}/`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      });
+    },
+
+    async delete(id: string): Promise<void> {
+      return apiRequest<void>(`/api/v1/memberships/${id}/`, {
+        method: "DELETE",
+      });
+    },
+  },
+
+  libraries: {
+    async list(params?: {
+      institution_id?: string;
+    }): Promise<{ results: Library[]; count: number }> {
+      const query = params?.institution_id
+        ? `?institution_id=${encodeURIComponent(params.institution_id)}`
+        : "";
+      return apiRequest<{ results: Library[]; count: number }>(
+        `/api/v1/libraries/${query}`,
+        { method: "GET" }
+      );
+    },
+
+    async get(id: string): Promise<Library> {
+      return apiRequest<Library>(`/api/v1/libraries/${id}/`, {
+        method: "GET",
+      });
+    },
+
+    async create(data: {
+      name: string;
+      slug: string;
+      description?: string;
+      visibility?: LibraryVisibility;
+      institution_id?: string;
+    }): Promise<Library> {
+      return apiRequest<Library>("/api/v1/libraries/", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+    },
+
+    async update(id: string, data: Partial<Library>): Promise<Library> {
+      return apiRequest<Library>(`/api/v1/libraries/${id}/`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      });
+    },
+
+    async delete(id: string): Promise<void> {
+      return apiRequest<void>(`/api/v1/libraries/${id}/`, {
+        method: "DELETE",
+      });
+    },
+  },
+
+  resources: {
+    async list(libraryId: string): Promise<{ results: Resource[]; count: number }> {
+      return apiRequest<{ results: Resource[]; count: number }>(
+        `/api/v1/libraries/${libraryId}/resources/`,
+        { method: "GET" }
+      );
+    },
+
+    async get(libraryId: string, id: string): Promise<Resource> {
+      return apiRequest<Resource>(
+        `/api/v1/libraries/${libraryId}/resources/${id}/`,
+        { method: "GET" }
+      );
+    },
+
+    async upload(libraryId: string, formData: FormData): Promise<Resource> {
+      return apiRequest<Resource>(
+        `/api/v1/libraries/${libraryId}/resources/`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+    },
+
+    async download(libraryId: string, id: string, filename: string): Promise<void> {
+      const url = `${API_BASE_URL}/api/v1/libraries/${libraryId}/resources/${id}/download/`;
+      const token = getAccessToken();
+      const activeInstId = getActiveInstitutionId();
+
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      if (activeInstId) headers["X-Institution-Id"] = activeInstId;
+
+      const res = await fetch(url, { headers, credentials: "include" });
+      if (!res.ok) {
+        throw new ApiClientError(`Download failed (${res.status})`, res.status);
+      }
+
+      const blob = await res.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    },
+
+    async getProcessingStatus(
+      libraryId: string,
+      id: string
+    ): Promise<ProcessingRunStatus> {
+      return apiRequest<ProcessingRunStatus>(
+        `/api/v1/libraries/${libraryId}/resources/${id}/processing-status/`,
+        { method: "GET" }
+      );
+    },
+
+    async triggerReprocess(
+      libraryId: string,
+      id: string
+    ): Promise<ProcessingRunStatus> {
+      return apiRequest<ProcessingRunStatus>(
+        `/api/v1/libraries/${libraryId}/resources/${id}/processing-status/`,
+        { method: "POST" }
+      );
+    },
+
+    async delete(libraryId: string, id: string): Promise<void> {
+      return apiRequest<void>(
+        `/api/v1/libraries/${libraryId}/resources/${id}/`,
+        { method: "DELETE" }
+      );
+    },
+  },
+
+  accessPolicies: {
+    async list(
+      libraryId: string
+    ): Promise<{ results: LibraryAccessPolicy[]; count: number }> {
+      return apiRequest<{ results: LibraryAccessPolicy[]; count: number }>(
+        `/api/v1/libraries/${libraryId}/access-policies/`,
+        { method: "GET" }
+      );
+    },
+
+    async grant(
+      libraryId: string,
+      data: { user_id: string; role?: LibraryAccessRole }
+    ): Promise<LibraryAccessPolicy> {
+      return apiRequest<LibraryAccessPolicy>(
+        `/api/v1/libraries/${libraryId}/access-policies/`,
+        {
+          method: "POST",
+          body: JSON.stringify(data),
+        }
+      );
+    },
+
+    async update(
+      libraryId: string,
+      policyId: string,
+      data: { role: LibraryAccessRole }
+    ): Promise<LibraryAccessPolicy> {
+      return apiRequest<LibraryAccessPolicy>(
+        `/api/v1/libraries/${libraryId}/access-policies/${policyId}/`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(data),
+        }
+      );
+    },
+
+    async revoke(libraryId: string, policyId: string): Promise<void> {
+      return apiRequest<void>(
+        `/api/v1/libraries/${libraryId}/access-policies/${policyId}/`,
+        { method: "DELETE" }
       );
     },
   },

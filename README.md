@@ -120,10 +120,10 @@ pnpm start
 * `/verify-email`: 6-digit OTP identity verification.
 * `/onboarding`: Institution creation wizard (Name, Slug, Classification).
 * `/dashboard`: Workspace overview, status badges, and quick actions.
-* `/people`: Member directory and role assignments (Phase 3).
-* `/libraries`: Institutional knowledge containers and visibility (Phase 3).
-* `/resources`: Document repository and ingestion pipeline inspector (Phase 3).
-* `/access`: Granular library RBAC policies (Phase 3).
+* `/people`: Member directory, role modification, status toggles, and safe member removal.
+* `/libraries`: Institutional knowledge containers, creation wizard, and visibility controls.
+* `/resources`: Document repository, file dropzone, ingestion pipeline inspector, and binary download.
+* `/access`: Granular library RBAC access policy matrix, member role grants, and revocations.
 * `/settings`: Workspace profile, slug identifier, and danger zone.
 
 ---
