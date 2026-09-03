@@ -1,8 +1,8 @@
 "use client";
 
-import React, { use, useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   FolderPlus,
   Upload,
@@ -56,13 +56,9 @@ const STAGES: Array<{ key: ProcessingStage; label: string }> = [
   { key: "finalize", label: "Finalize" },
 ];
 
-export default function LibraryDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const resolvedParams = use(params);
-  const libraryId = resolvedParams.id;
+export default function LibraryDetailPage() {
+  const urlParams = useParams<{ id: string }>();
+  const libraryId = (urlParams?.id || "") as string;
   const router = useRouter();
   const { activeInstitution } = useInstitution();
 
