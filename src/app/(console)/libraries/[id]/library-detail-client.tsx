@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   FolderPlus,
   Upload,
@@ -58,7 +58,9 @@ const STAGES: Array<{ key: ProcessingStage; label: string }> = [
 
 export default function LibraryDetailClient() {
   const urlParams = useParams<{ id: string }>();
-  const libraryId = (urlParams?.id || "") as string;
+  const searchParams = useSearchParams();
+  const rawId = urlParams?.id;
+  const libraryId = (rawId && rawId !== "view" ? rawId : searchParams?.get("id") || "") as string;
   const router = useRouter();
   const { activeInstitution } = useInstitution();
 

@@ -372,7 +372,7 @@ export default function LibrariesPage() {
             return (
               <div
                 key={lib.id}
-                onClick={() => router.push(`/libraries/${lib.id}`)}
+                onClick={() => router.push(`/libraries/view?id=${lib.id}`)}
                 className="group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs hover:border-slate-300 hover:shadow-sm transition-all cursor-pointer overflow-hidden"
               >
                 {/* Subject Spine Ribbon */}
@@ -433,7 +433,7 @@ export default function LibrariesPage() {
                 >
                   <div className="flex items-center gap-2">
                     <Link
-                      href={`/libraries/${lib.id}`}
+                      href={`/libraries/view?id=${lib.id}`}
                       className="inline-flex items-center gap-1 text-[11px] font-medium text-accent hover:underline"
                     >
                       <FolderOpen size={12} className="text-amber-600" />
@@ -492,7 +492,7 @@ export default function LibrariesPage() {
                   return (
                     <tr
                       key={lib.id}
-                      onClick={() => router.push(`/libraries/${lib.id}`)}
+                      onClick={() => router.push(`/libraries/view?id=${lib.id}`)}
                       className="hover:bg-slate-50/60 transition-colors cursor-pointer group"
                     >
                       <td className="px-3.5 py-2.5">
@@ -537,7 +537,7 @@ export default function LibrariesPage() {
                       >
                         <div className="flex items-center justify-end gap-1">
                           <Link
-                            href={`/libraries/${lib.id}`}
+                            href={`/libraries/view?id=${lib.id}`}
                             className="inline-flex h-7 items-center gap-1 rounded border border-slate-200 px-2 text-[11px] font-medium text-slate-700 hover:bg-slate-50 transition-colors shadow-xs"
                           >
                             <FolderOpen size={11} className="text-amber-600" />

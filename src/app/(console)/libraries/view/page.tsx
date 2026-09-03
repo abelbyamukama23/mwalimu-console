@@ -1,11 +1,7 @@
 import React, { Suspense } from "react";
-import LibraryDetailClient from "./library-detail-client";
+import LibraryDetailClient from "../[id]/library-detail-client";
 
-export function generateStaticParams() {
-  return [{ id: "view" }];
-}
-
-export default function LibraryDetailPage() {
+export default function LibraryViewPage() {
   return (
     <Suspense
       fallback={
