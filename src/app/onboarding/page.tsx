@@ -14,6 +14,7 @@ import {
 import { useSession } from "../../lib/auth/session-context";
 import { useInstitution } from "../../lib/institution/institution-context";
 import type { InstitutionType } from "../../types";
+import { MwalimuLogo } from "../../components/ui/logo";
 
 const TYPE_OPTIONS: Array<{
   type: InstitutionType;
@@ -156,18 +157,19 @@ export default function OnboardingPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-canvas p-6">
-      <div className="w-full max-w-2xl rounded-xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs">
+      <div className="w-full max-w-2xl rounded-xl border border-border bg-surface p-6 sm:p-8 shadow-xs">
         <div className="mb-6">
-          <div className="flex items-center gap-1.5 mb-2">
-            <span className="text-lg font-bold tracking-tight text-slate-900">mwalimu</span>
-            <span className="rounded bg-slate-900 px-1.5 py-0.5 text-[10px] font-semibold text-white tracking-wide">
+          <div className="flex items-center gap-2 mb-2">
+            <MwalimuLogo size={28} priority />
+            <span className="text-lg font-bold tracking-tight text-ink">Mwalimu</span>
+            <span className="rounded bg-accent-subtle text-accent border border-accent/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
               Console
             </span>
-            <span className="ml-2 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-medium text-emerald-700 border border-emerald-200">
+            <span className="ml-2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-medium">
               Setup: Who are you?
             </span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-semibold text-ink tracking-tight">
             Who are you? (Set Up Your Workspace)
           </h1>
           <p className="mt-1 text-xs sm:text-[13px] text-slate-500">

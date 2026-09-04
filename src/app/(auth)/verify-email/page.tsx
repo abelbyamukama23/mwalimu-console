@@ -4,6 +4,7 @@ import React, { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "../../../lib/auth/session-context";
+import { MwalimuLogo } from "../../../components/ui/logo";
 
 function VerifyEmailForm() {
   const router = useRouter();
@@ -34,15 +35,16 @@ function VerifyEmailForm() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
-      <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-7 sm:p-8 shadow-xs">
+      <div className="w-full max-w-md rounded-xl border border-border bg-surface p-7 sm:p-8 shadow-xs">
         <div className="mb-6 text-center">
-          <div className="inline-flex items-center gap-1.5 mb-3">
-            <span className="text-xl font-bold tracking-tight text-slate-900">mwalimu</span>
-            <span className="rounded bg-slate-900 px-1.5 py-0.5 text-[10px] font-semibold text-white tracking-wide">
+          <div className="inline-flex items-center gap-2 mb-3">
+            <MwalimuLogo size={28} priority />
+            <span className="text-xl font-bold tracking-tight text-ink">Mwalimu</span>
+            <span className="rounded bg-accent-subtle text-accent border border-accent/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
               Console
             </span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-semibold text-ink tracking-tight">
             Verify Your Email
           </h1>
           <p className="mt-1 text-xs sm:text-[13px] text-slate-500">

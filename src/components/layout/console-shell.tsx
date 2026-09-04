@@ -24,6 +24,7 @@ import { useSession } from "../../lib/auth/session-context";
 import { useInstitution } from "../../lib/institution/institution-context";
 import { useTheme } from "../../lib/theme/theme-context";
 import { INSTITUTION_TYPE_LABELS } from "../../types";
+import { MwalimuLogo } from "../ui/logo";
 
 interface NavItem {
   id: string;
@@ -95,10 +96,8 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
         {/* Brand Header */}
         <div className="flex h-14 items-center justify-between border-b border-sidebar-border px-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-accent text-white font-bold text-xs shadow-xs">
-              M
-            </div>
-            <span className="text-base font-semibold tracking-tight text-ink">mwalimu</span>
+            <MwalimuLogo size={24} priority />
+            <span className="text-base font-semibold tracking-tight text-ink">Mwalimu</span>
             <span className="rounded bg-accent-subtle text-accent border border-accent/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
               Console
             </span>
@@ -202,10 +201,8 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
             >
               {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-accent text-white font-bold text-xs">
-              M
-            </div>
-            <span className="font-semibold text-sm text-ink">mwalimu</span>
+            <MwalimuLogo size={22} priority />
+            <span className="font-semibold text-sm text-ink">Mwalimu</span>
             <span className="rounded bg-accent-subtle text-accent border border-accent/20 px-1 py-0.2 text-[9px] font-semibold uppercase">
               Console
             </span>
@@ -236,10 +233,8 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
             >
               <div className="mb-4 flex items-center justify-between border-b border-border pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded bg-accent text-white font-bold text-xs">
-                    M
-                  </div>
-                  <span className="font-semibold text-base text-ink">mwalimu</span>
+                  <MwalimuLogo size={24} />
+                  <span className="font-semibold text-base text-ink">Mwalimu</span>
                   <span className="rounded bg-accent-subtle text-accent border border-accent/20 px-1.5 py-0.5 text-[9px] font-semibold uppercase">
                     Console
                   </span>
