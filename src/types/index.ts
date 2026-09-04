@@ -68,11 +68,75 @@ export interface Membership {
   };
   role: MembershipRole;
   status: MembershipStatus;
+  academic_unit?: {
+    id: string;
+    name: string;
+    code: string;
+    unit_type: string;
+  } | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type AcademicUnitType =
+  | "grade"
+  | "year"
+  | "department"
+  | "stream"
+  | "stage"
+  | "other";
+
+export const ACADEMIC_UNIT_TYPE_LABELS: Record<AcademicUnitType, string> = {
+  grade: "Grade Level",
+  year: "Year / Form",
+  department: "Department",
+  stream: "Stream / Class Section",
+  stage: "Stage / Level",
+  other: "Other Unit",
+};
+
+export interface AcademicUnit {
+  id: string;
+  institution_id: string;
+  name: string;
+  code: string;
+  unit_type: AcademicUnitType;
+  order: number;
+  is_active: boolean;
+  metadata: Record<string, unknown>;
+  student_count: number;
+  teacher_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export type AcademicStructurePreset =
+  | "primary"
+  | "secondary"
+  | "primary_and_secondary"
+  | "tertiary";
+
+export interface TeachingAssignment {
+  id: string;
+  institution_id: string;
+  membership_id: string;
+  teacher_email: string;
+  teacher_name: string;
+  academic_unit: {
+    id: string;
+    name: string;
+    code: string;
+    unit_type: string;
+  };
+  subject: string;
+  status: "active" | "inactive";
+  metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
 
 export type LibraryScopeType = "personal" | "institution";
+export type LibraryTargetType = "utility" | "academic_unit";
 export type LibraryStatus = "active" | "archived";
 export type LibraryVisibility = "discoverable" | "restricted";
 export type LibraryAccessRole = "administrator" | "teacher" | "student";
@@ -85,6 +149,13 @@ export interface Library {
     id: string;
     name: string;
     slug: string;
+  } | null;
+  target_type: LibraryTargetType;
+  academic_unit?: {
+    id: string;
+    name: string;
+    code: string;
+    unit_type: string;
   } | null;
   name: string;
   slug: string;

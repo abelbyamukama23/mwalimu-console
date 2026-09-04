@@ -15,6 +15,7 @@ import type {
   Library,
   LibraryAccessPolicy,
   LibraryAccessRole,
+  LibraryTargetType,
   LibraryVisibility,
   LoginResponse,
   Membership,
@@ -36,6 +37,9 @@ import type {
   UnreadNotificationCountResponse,
   LibraryInvitation,
   PublicInvitationResolution,
+  AcademicUnit,
+  AcademicStructurePreset,
+  TeachingAssignment,
 } from "../../types";
 
 export class ApiClientError extends Error {
@@ -427,6 +431,160 @@ export const api = {
         method: "DELETE",
       });
     },
+
+    async getAcademicPlacement(
+      id: string
+    ): Promise<AcademicUnit | null> {
+      return apiRequest<AcademicUnit | null>(
+        `/api/v1/memberships/${id}/academic-placement/`,
+        { method: "GET" }
+      );
+    },
+
+    async setAcademicPlacement(
+      id: string,
+      academicUnitId: string | null
+    ): Promise<Membership> {
+      return apiRequest<Membership>(
+        `/api/v1/memberships/${id}/academic-placement/`,
+        {
+          method: "PUT",
+          body: JSON.stringify({ academic_unit_id: academicUnitId }),
+        }
+      );
+    },
+
+    async listTeachingAssignments(
+      id: string
+    ): Promise<TeachingAssignment[]> {
+      const res = await apiRequest<any>(
+        `/api/v1/memberships/${id}/teaching-assignments/`,
+        { method: "GET" }
+      );
+      if (Array.isArray(res)) return res;
+      return res?.results || [];
+    },
+
+    async createTeachingAssignment(
+      id: string,
+      data: { academic_unit_id: string; subject?: string }
+    ): Promise<TeachingAssignment> {
+      return apiRequest<TeachingAssignment>(
+        `/api/v1/memberships/${id}/teaching-assignments/`,
+        {
+          method: "POST",
+          body: JSON.stringify(data),
+        }
+      );
+    },
+
+    async deleteTeachingAssignment(assignmentId: string): Promise<void> {
+      return apiRequest<void>(`/api/v1/teaching-assignments/${assignmentId}/`, {
+        method: "DELETE",
+      });
+    },
+  },
+
+  academicUnits: {
+    async list(institutionId: string): Promise<AcademicUnit[]> {
+      const res = await apiRequest<any>(
+        `/api/v1/institutions/${institutionId}/academic-units/`,
+        { method: "GET" }
+      );
+      if (Array.isArray(res)) return res;
+      return res?.results || [];
+    },
+
+    async get(institutionId: string, id: string): Promise<AcademicUnit> {
+      return apiRequest<AcademicUnit>(
+        `/api/v1/institutions/${institutionId}/academic-units/${id}/`,
+        { method: "GET" }
+      );
+    },
+
+    async create(
+      institutionId: string,
+      data: {
+        name: string;
+        code: string;
+        unit_type?: string;
+        order?: number;
+      }
+    ): Promise<AcademicUnit> {
+      return apiRequest<AcademicUnit>(
+        `/api/v1/institutions/${institutionId}/academic-units/`,
+        {
+          method: "POST",
+          body: JSON.stringify(data),
+        }
+      );
+    },
+
+    async update(
+      institutionId: string,
+      id: string,
+      data: Partial<{
+        name: string;
+        code: string;
+        unit_type: string;
+        order: number;
+        is_active: boolean;
+      }>
+    ): Promise<AcademicUnit> {
+      return apiRequest<AcademicUnit>(
+        `/api/v1/institutions/${institutionId}/academic-units/${id}/`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(data),
+        }
+      );
+    },
+
+    async delete(institutionId: string, id: string): Promise<void> {
+      return apiRequest<void>(
+        `/api/v1/institutions/${institutionId}/academic-units/${id}/`,
+        { method: "DELETE" }
+      );
+    },
+
+    async applyPreset(
+      institutionId: string,
+      preset: AcademicStructurePreset
+    ): Promise<AcademicUnit[]> {
+      const res = await apiRequest<any>(
+        `/api/v1/institutions/${institutionId}/academic-units/apply-preset/`,
+        {
+          method: "POST",
+          body: JSON.stringify({ preset }),
+        }
+      );
+      if (Array.isArray(res)) return res;
+      return res?.results || [];
+    },
+
+    async getTeachers(
+      institutionId: string,
+      id: string
+    ): Promise<TeachingAssignment[]> {
+      const res = await apiRequest<any>(
+        `/api/v1/institutions/${institutionId}/academic-units/${id}/teachers/`,
+        { method: "GET" }
+      );
+      if (Array.isArray(res)) return res;
+      return res?.results || [];
+    },
+
+    async getStudents(
+      institutionId: string,
+      id: string
+    ): Promise<Membership[]> {
+      const res = await apiRequest<any>(
+        `/api/v1/institutions/${institutionId}/academic-units/${id}/students/`,
+        { method: "GET" }
+      );
+      if (Array.isArray(res)) return res;
+      return res?.results || [];
+    },
   },
 
   libraries: {
@@ -454,6 +612,8 @@ export const api = {
       description?: string;
       visibility?: LibraryVisibility;
       institution_id?: string;
+      target_type?: LibraryTargetType;
+      academic_unit_id?: string | null;
     }): Promise<Library> {
       return apiRequest<Library>("/api/v1/libraries/", {
         method: "POST",
@@ -461,7 +621,10 @@ export const api = {
       });
     },
 
-    async update(id: string, data: Partial<Library>): Promise<Library> {
+    async update(
+      id: string,
+      data: Partial<Library> & { academic_unit_id?: string | null }
+    ): Promise<Library> {
       return apiRequest<Library>(`/api/v1/libraries/${id}/`, {
         method: "PATCH",
         body: JSON.stringify(data),

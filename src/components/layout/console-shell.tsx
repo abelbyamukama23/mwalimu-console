@@ -8,6 +8,7 @@ import {
   Cpu,
   Bell,
   Users,
+  GraduationCap,
   BookOpen,
   Shield,
   Network,
@@ -45,13 +46,19 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: "dashboard", label: "Overview", href: "/dashboard", icon: LayoutDashboard },
       { id: "usage", label: "AI Usage", href: "/usage", icon: Cpu },
-      { id: "activity", label: "Notifications", href: "/activity", icon: Bell },
+      { id: "activity", label: "Audit Ledger", href: "/activity", icon: Bell },
     ],
   },
   {
     title: "Management",
     items: [
       { id: "people", label: "People & Members", href: "/people", icon: Users },
+      {
+        id: "academic-structure",
+        label: "Academic Structure",
+        href: "/academic-structure",
+        icon: GraduationCap,
+      },
       { id: "libraries", label: "Knowledge Libraries", href: "/libraries", icon: BookOpen },
       { id: "access", label: "Access Policies", href: "/access", icon: Shield },
     ],

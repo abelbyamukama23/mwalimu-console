@@ -28,6 +28,8 @@ import {
   RotateCcw,
   Send,
   Loader2,
+  GraduationCap,
+  Sparkles,
 } from "lucide-react";
 import { api, ApiClientError } from "../../../../lib/api/client";
 import { useInstitution } from "../../../../lib/institution/institution-context";
@@ -503,7 +505,7 @@ export default function LibraryDetailClient() {
           /* LEVEL 1: LIBRARY ROOT (Shelves View) */
           <div className="mt-2 flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
             <div>
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2.5 flex-wrap">
                 <h1 className="text-2xl sm:text-[26px] font-semibold text-slate-900 tracking-tight">
                   {library.name}
                 </h1>
@@ -516,6 +518,17 @@ export default function LibraryDetailClient() {
                 >
                   {library.visibility}
                 </span>
+                {library.target_type === "academic_unit" && library.academic_unit ? (
+                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium border border-blue-200 bg-blue-50 text-blue-700">
+                    <GraduationCap size={11} />
+                    <span>Academic Shelf: {library.academic_unit.name} ({library.academic_unit.code})</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium border border-teal-200 bg-teal-50 text-teal-700">
+                    <Sparkles size={11} />
+                    <span>Universal Utility Shelf</span>
+                  </span>
+                )}
               </div>
               <p className="mt-1 text-xs sm:text-[13px] text-slate-500 max-w-2xl">
                 {library.description || "Curated learning repository for institutional coursework and AI grounding."}
@@ -558,8 +571,21 @@ export default function LibraryDetailClient() {
                   <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight">
                     {activeShelf}
                   </h1>
-                  <div className="text-xs text-slate-400 mt-0.5">
-                    Shelf inside <span className="font-medium text-slate-600">{library.name}</span> •{" "}
+                  <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-2 flex-wrap">
+                    <span>Shelf inside <span className="font-medium text-slate-600">{library.name}</span></span>
+                    <span>•</span>
+                    {library.target_type === "academic_unit" && library.academic_unit ? (
+                      <span className="text-blue-600 font-medium inline-flex items-center gap-1">
+                        <GraduationCap size={11} />
+                        <span>{library.academic_unit.code}</span>
+                      </span>
+                    ) : (
+                      <span className="text-teal-600 font-medium inline-flex items-center gap-1">
+                        <Sparkles size={11} />
+                        <span>Utility</span>
+                      </span>
+                    )}
+                    <span>•</span>
                     <span className="font-semibold text-slate-700">{shelfResources.length}</span> documents
                   </div>
                 </div>
