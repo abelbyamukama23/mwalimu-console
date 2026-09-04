@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Building2,
   CheckCircle2,
@@ -12,6 +12,9 @@ import {
   ArrowDown,
   Info,
   RefreshCw,
+  Image as ImageIcon,
+  Upload,
+  Loader2,
 } from "lucide-react";
 import { useInstitution } from "../../../lib/institution/institution-context";
 import { api } from "../../../lib/api/client";
@@ -27,6 +30,61 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Institutional Branding State
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingBadge, setIsUploadingBadge] = useState(false);
+  const [isRemovingBadge, setIsRemovingBadge] = useState(false);
+  const [badgeError, setBadgeError] = useState<string | null>(null);
+  const [badgeSuccess, setBadgeSuccess] = useState<string | null>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeInstitution) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setBadgeError("File size exceeds 2MB limit. Please choose a smaller image.");
+      return;
+    }
+
+    const validTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/svg+xml"];
+    if (!validTypes.includes(file.type)) {
+      setBadgeError("Unsupported format. Allowed: PNG, JPEG, WebP, SVG.");
+      return;
+    }
+
+    setIsUploadingBadge(true);
+    setBadgeError(null);
+    setBadgeSuccess(null);
+    try {
+      await api.institutions.uploadBranding(activeInstitution.id, file);
+      await refreshInstitutions();
+      setBadgeSuccess("Institutional badge updated successfully.");
+      setTimeout(() => setBadgeSuccess(null), 4000);
+    } catch (err: any) {
+      setBadgeError(err?.message || "Failed to upload institutional badge.");
+    } finally {
+      setIsUploadingBadge(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveBadge = async () => {
+    if (!activeInstitution) return;
+    setIsRemovingBadge(true);
+    setBadgeError(null);
+    setBadgeSuccess(null);
+    try {
+      await api.institutions.removeBranding(activeInstitution.id);
+      await refreshInstitutions();
+      setBadgeSuccess("Institutional badge removed.");
+      setTimeout(() => setBadgeSuccess(null), 4000);
+    } catch (err: any) {
+      setBadgeError(err?.message || "Failed to remove badge.");
+    } finally {
+      setIsRemovingBadge(false);
+    }
+  };
 
   // Focus Context Regions State
   const [contextRegions, setContextRegions] = useState<InstitutionContextRegion[]>([]);
@@ -243,6 +301,91 @@ export default function SettingsPage() {
             </button>
           </div>
         </form>
+      </div>
+
+      {/* Institutional Branding Card */}
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+            <ImageIcon size={16} className="text-accent" />
+            <span>Institutional Branding</span>
+          </h2>
+          <span className="text-[11px] text-slate-400">PNG, JPEG, WebP, SVG up to 2MB</span>
+        </div>
+
+        {badgeSuccess && (
+          <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-2.5 text-xs text-emerald-700">
+            <CheckCircle2 size={14} />
+            <span>{badgeSuccess}</span>
+          </div>
+        )}
+
+        {badgeError && (
+          <div className="flex items-center gap-2 rounded-lg bg-rose-50 border border-rose-200 p-2.5 text-xs text-rose-700">
+            <AlertCircle size={14} />
+            <span>{badgeError}</span>
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-1">
+          <div className="flex h-16 w-16 items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 overflow-hidden shrink-0">
+            {activeInstitution?.badge_url ? (
+              <img
+                src={activeInstitution.badge_url}
+                alt={activeInstitution.name}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <Building2 size={24} className="text-slate-400" />
+            )}
+          </div>
+
+          <div className="space-y-1.5 flex-1">
+            <div className="text-xs font-medium text-slate-900">Official Badge & Logo</div>
+            <p className="text-[11px] text-slate-500">
+              Displayed in the navigation bar, console sidebar, and member invitation communications.
+            </p>
+
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <button
+                type="button"
+                disabled={isUploadingBadge}
+                onClick={() => fileInputRef.current?.click()}
+                className="inline-flex h-7 items-center gap-1.5 rounded-md bg-slate-900 px-2.5 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition-colors shadow-2xs cursor-pointer"
+              >
+                {isUploadingBadge ? (
+                  <Loader2 size={12} className="animate-spin" />
+                ) : (
+                  <Upload size={12} />
+                )}
+                <span>{activeInstitution?.badge_url ? "Replace Badge" : "Upload Badge"}</span>
+              </button>
+
+              {activeInstitution?.badge_url && (
+                <button
+                  type="button"
+                  disabled={isRemovingBadge || isUploadingBadge}
+                  onClick={handleRemoveBadge}
+                  className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-200 bg-rose-50 px-2.5 text-xs font-medium text-rose-700 hover:bg-rose-100 disabled:opacity-50 transition-colors cursor-pointer"
+                >
+                  {isRemovingBadge ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <Trash2 size={12} />
+                  )}
+                  <span>Remove</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Focus Context Regions Panel */}

@@ -32,6 +32,10 @@ import type {
   ConnectionSyncJob,
   InstitutionContextRegion,
   GeographicUnit,
+  PlatformNotification,
+  UnreadNotificationCountResponse,
+  LibraryInvitation,
+  PublicInvitationResolution,
 } from "../../types";
 
 export class ApiClientError extends Error {
@@ -378,6 +382,21 @@ export const api = {
         { method: "GET" }
       );
     },
+
+    async uploadBranding(id: string, file: File): Promise<Institution> {
+      const formData = new FormData();
+      formData.append("file", file);
+      return apiRequest<Institution>(`/api/v1/institutions/${id}/branding/`, {
+        method: "POST",
+        body: formData,
+      });
+    },
+
+    async removeBranding(id: string): Promise<void> {
+      return apiRequest<void>(`/api/v1/institutions/${id}/branding/`, {
+        method: "DELETE",
+      });
+    },
   },
 
   memberships: {
@@ -710,6 +729,121 @@ export const api = {
         return { results: res, count: res.length };
       }
       return res;
+    },
+  },
+
+  notifications: {
+    async list(params?: {
+      is_read?: boolean;
+      page?: number;
+    }): Promise<{ results: PlatformNotification[]; count: number }> {
+      const q = new URLSearchParams();
+      if (params?.is_read !== undefined) q.append("is_read", String(params.is_read));
+      if (params?.page) q.append("page", String(params.page));
+      const queryStr = q.toString() ? `?${q.toString()}` : "";
+      const res = await apiRequest<any>(`/api/v1/notifications/${queryStr}`, {
+        method: "GET",
+      });
+      if (Array.isArray(res)) {
+        return { results: res, count: res.length };
+      }
+      return res;
+    },
+
+    async getUnreadCount(): Promise<UnreadNotificationCountResponse> {
+      return apiRequest<UnreadNotificationCountResponse>(
+        "/api/v1/notifications/unread-count/",
+        { method: "GET" }
+      );
+    },
+
+    async markRead(id: string): Promise<PlatformNotification> {
+      return apiRequest<PlatformNotification>(
+        `/api/v1/notifications/${id}/read/`,
+        { method: "POST" }
+      );
+    },
+
+    async markAllRead(): Promise<{ marked_read: number }> {
+      return apiRequest<{ marked_read: number }>(
+        "/api/v1/notifications/mark-all-read/",
+        { method: "POST" }
+      );
+    },
+  },
+
+  invitations: {
+    async listForLibrary(
+      libraryId: string,
+      status?: string
+    ): Promise<{ results: LibraryInvitation[]; count: number }> {
+      const q = status ? `?status=${encodeURIComponent(status)}` : "";
+      const res = await apiRequest<any>(
+        `/api/v1/libraries/${libraryId}/invitations/${q}`,
+        { method: "GET" }
+      );
+      if (Array.isArray(res)) {
+        return { results: res, count: res.length };
+      }
+      return res;
+    },
+
+    async create(
+      libraryId: string,
+      data: { email: string; intended_access: string }
+    ): Promise<LibraryInvitation> {
+      return apiRequest<LibraryInvitation>(
+        `/api/v1/libraries/${libraryId}/invitations/`,
+        {
+          method: "POST",
+          body: JSON.stringify(data),
+        }
+      );
+    },
+
+    async revoke(
+      libraryId: string,
+      invitationId: string
+    ): Promise<LibraryInvitation> {
+      return apiRequest<LibraryInvitation>(
+        `/api/v1/libraries/${libraryId}/invitations/${invitationId}/revoke/`,
+        { method: "POST" }
+      );
+    },
+
+    async resolveToken(token: string): Promise<PublicInvitationResolution> {
+      return apiRequest<PublicInvitationResolution>(
+        `/api/v1/invitations/${token}/`,
+        { method: "GET" }
+      );
+    },
+
+    async accept(
+      token: string
+    ): Promise<{
+      status: string;
+      library_id: string;
+      library_name: string;
+      role: string;
+      message: string;
+    }> {
+      return apiRequest<{
+        status: string;
+        library_id: string;
+        library_name: string;
+        role: string;
+        message: string;
+      }>(`/api/v1/invitations/${token}/accept/`, { method: "POST" });
+    },
+
+    async decline(
+      token: string
+    ): Promise<{ status: string; library_id: string; message: string }> {
+      return apiRequest<{
+        status: string;
+        library_id: string;
+        message: string;
+      }>(`/api/v1/invitations/${token}/decline/`, { method: "POST" });
     },
   },
 };

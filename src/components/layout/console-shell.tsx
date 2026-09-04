@@ -25,6 +25,7 @@ import { useInstitution } from "../../lib/institution/institution-context";
 import { useTheme } from "../../lib/theme/theme-context";
 import { INSTITUTION_TYPE_LABELS } from "../../types";
 import { MwalimuLogo } from "../ui/logo";
+import { NotificationCenter } from "../notifications/notification-center";
 
 interface NavItem {
   id: string;
@@ -122,8 +123,16 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
         {/* Static Institution Identity Card */}
         <div className="border-b border-sidebar-border p-3">
           <div className="flex w-full items-center gap-2.5 rounded-lg border border-border bg-surface px-2.5 py-2 text-left shadow-xs transition-colors">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-active text-accent shrink-0">
-              <Building2 size={15} />
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-active text-accent shrink-0 overflow-hidden border border-border/40">
+              {activeInstitution?.badge_url ? (
+                <img
+                  src={activeInstitution.badge_url}
+                  alt={activeInstitution.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <Building2 size={15} />
+              )}
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate font-semibold text-ink text-xs leading-tight">
@@ -208,6 +217,7 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
             </span>
           </div>
           <div className="flex items-center gap-2">
+            <NotificationCenter />
             <button
               onClick={cycleTheme}
               title="Toggle theme"
@@ -215,9 +225,21 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
             >
               {resolvedTheme === "dark" ? <Moon size={14} /> : <Sun size={14} />}
             </button>
-            <div className="text-xs font-medium text-accent truncate max-w-[130px]">
+            <div className="text-xs font-medium text-accent truncate max-w-[110px]">
               {activeInstitution?.name}
             </div>
+          </div>
+        </header>
+
+        {/* Desktop Top Header */}
+        <header className="hidden md:flex h-14 items-center justify-between border-b border-border bg-surface px-6 shrink-0 transition-colors">
+          <div className="flex items-center gap-2 text-xs text-ink-secondary">
+            <span className="font-semibold text-ink">{activeInstitution?.name || "Institution"}</span>
+            <span className="text-ink-tertiary">/</span>
+            <span className="capitalize">{pathname.split("/")[1] || "overview"}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <NotificationCenter />
           </div>
         </header>
 

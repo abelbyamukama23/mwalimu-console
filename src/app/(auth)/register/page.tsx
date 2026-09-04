@@ -1,16 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "../../../lib/auth/session-context";
 import { MwalimuLogo } from "../../../components/ui/logo";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next");
+  const initialEmail = searchParams.get("email") || "";
   const { register } = useSession();
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -28,9 +31,11 @@ export default function RegisterPage() {
     try {
       const res = await register(email, password, passwordConfirm);
       if (res.requires_verification) {
-        router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+        const nextQuery = next ? `&next=${encodeURIComponent(next)}` : "";
+        router.push(`/verify-email?email=${encodeURIComponent(email)}${nextQuery}`);
       } else {
-        router.push("/login");
+        const nextQuery = next ? `?next=${encodeURIComponent(next)}` : "";
+        router.push(`/login${nextQuery}`);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Registration failed.");
@@ -52,10 +57,10 @@ export default function RegisterPage() {
             </span>
           </div>
           <h1 className="text-xl sm:text-2xl font-semibold text-ink tracking-tight">
-            Create Administrator Account
+            Create Account
           </h1>
           <p className="mt-1 text-xs sm:text-[13px] text-slate-500">
-            Step 1 of 2: Create and verify your identity before workspace setup
+            Create and verify your identity on Mwalimu
           </p>
         </div>
 
@@ -75,8 +80,8 @@ export default function RegisterPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@institution.edu"
-              className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-accent focus:outline-none transition-colors"
+              placeholder="user@school.edu"
+              className="h-9 w-full rounded-lg border border-border bg-canvas px-3 text-xs text-ink placeholder:text-slate-400 focus:border-accent focus:outline-none transition-colors"
             />
           </div>
 
@@ -89,8 +94,8 @@ export default function RegisterPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 8 characters"
-              className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-accent focus:outline-none transition-colors"
+              placeholder="••••••••"
+              className="h-9 w-full rounded-lg border border-border bg-canvas px-3 text-xs text-ink placeholder:text-slate-400 focus:border-accent focus:outline-none transition-colors"
             />
           </div>
 
@@ -103,27 +108,38 @@ export default function RegisterPage() {
               required
               value={passwordConfirm}
               onChange={(e) => setPasswordConfirm(e.target.value)}
-              placeholder="Confirm your password"
-              className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-accent focus:outline-none transition-colors"
+              placeholder="••••••••"
+              className="h-9 w-full rounded-lg border border-border bg-canvas px-3 text-xs text-ink placeholder:text-slate-400 focus:border-accent focus:outline-none transition-colors"
             />
           </div>
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="h-9 w-full rounded-lg bg-slate-900 py-2 text-xs font-medium text-white transition-colors hover:bg-slate-800 disabled:opacity-50 shadow-xs"
+            className="h-9 w-full rounded-lg bg-slate-900 py-2 text-xs font-medium text-white transition-colors hover:bg-slate-800 disabled:opacity-50 shadow-xs cursor-pointer"
           >
-            {isSubmitting ? "Creating Account..." : "Continue to Verification"}
+            {isSubmitting ? "Creating Account..." : "Create Account"}
           </button>
         </form>
 
         <div className="mt-6 border-t border-slate-100 pt-4 text-center text-xs text-slate-500">
           Already have an account?{" "}
-          <Link href="/login" className="font-medium text-accent hover:underline">
-            Sign In
+          <Link
+            href={`/login${next ? `?next=${encodeURIComponent(next)}` : ""}`}
+            className="font-medium text-accent hover:underline"
+          >
+            Sign in
           </Link>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-canvas" />}>
+      <RegisterForm />
+    </Suspense>
   );
 }

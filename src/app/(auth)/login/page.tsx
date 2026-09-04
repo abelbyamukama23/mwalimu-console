@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "../../../lib/auth/session-context";
 import { MwalimuLogo } from "../../../components/ui/logo";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") || "/dashboard";
   const { login } = useSession();
 
   const [email, setEmail] = useState("");
@@ -22,7 +24,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      router.push("/dashboard");
+      router.push(next);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to sign in.");
     } finally {
@@ -66,41 +68,54 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@institution.edu"
-              className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-accent focus:outline-none transition-colors"
+              placeholder="admin@school.edu"
+              className="h-9 w-full rounded-lg border border-border bg-canvas px-3 text-xs text-ink placeholder:text-slate-400 focus:border-accent focus:outline-none transition-colors"
             />
           </div>
 
           <div>
-            <label className="block font-medium text-slate-700 mb-1">
-              Password
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block font-medium text-slate-700">
+                Password
+              </label>
+            </div>
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••••••"
-              className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-accent focus:outline-none transition-colors"
+              placeholder="••••••••"
+              className="h-9 w-full rounded-lg border border-border bg-canvas px-3 text-xs text-ink placeholder:text-slate-400 focus:border-accent focus:outline-none transition-colors"
             />
           </div>
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="h-9 w-full rounded-lg bg-slate-900 py-2 text-xs font-medium text-white transition-colors hover:bg-slate-800 disabled:opacity-50 shadow-xs"
+            className="h-9 w-full rounded-lg bg-slate-900 py-2 text-xs font-medium text-white transition-colors hover:bg-slate-800 disabled:opacity-50 shadow-xs cursor-pointer"
           >
             {isSubmitting ? "Signing In..." : "Sign In"}
           </button>
         </form>
 
         <div className="mt-6 border-t border-slate-100 pt-4 text-center text-xs text-slate-500">
-          Don&apos;t have an administrator account?{" "}
-          <Link href="/register" className="font-medium text-accent hover:underline">
-            Register your institution
+          Don&apos;t have an account?{" "}
+          <Link
+            href={`/register${next !== "/dashboard" ? `?next=${encodeURIComponent(next)}` : ""}`}
+            className="font-medium text-accent hover:underline"
+          >
+            Create an account
           </Link>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-canvas" />}>
+      <LoginForm />
+    </Suspense>
   );
 }

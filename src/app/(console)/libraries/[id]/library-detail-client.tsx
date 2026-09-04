@@ -21,6 +21,13 @@ import {
   ChevronRight,
   FileText,
   FolderOpen,
+  Users,
+  UserPlus,
+  Mail,
+  Clock,
+  RotateCcw,
+  Send,
+  Loader2,
 } from "lucide-react";
 import { api, ApiClientError } from "../../../../lib/api/client";
 import { useInstitution } from "../../../../lib/institution/institution-context";
@@ -37,6 +44,8 @@ import type {
   Resource,
   ResourceType,
   ResourceStatus,
+  LibraryInvitation,
+  LibraryAccessRole,
 } from "../../../../types";
 
 function formatBytes(bytes: number): string {
@@ -103,6 +112,79 @@ export default function LibraryDetailClient() {
   // Delete Resource
   const [resourceToDelete, setResourceToDelete] = useState<Resource | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Phase 3: Root Level Tab (Shelves vs Members & Invitations)
+  const [rootTab, setRootTab] = useState<"shelves" | "members">("shelves");
+  const [libraryInvitations, setLibraryInvitations] = useState<LibraryInvitation[]>([]);
+  const [isLoadingLibInvites, setIsLoadingLibInvites] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<LibraryAccessRole>("student");
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
+  const [revokingInviteId, setRevokingInviteId] = useState<string | null>(null);
+
+  const fetchLibraryInvitations = useCallback(async () => {
+    if (!libraryId) return;
+    setIsLoadingLibInvites(true);
+    try {
+      const res = await api.invitations.listForLibrary(libraryId);
+      const invites = res.results || [];
+      invites.sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      setLibraryInvitations(invites);
+    } catch {
+      // Graceful ignore
+    } finally {
+      setIsLoadingLibInvites(false);
+    }
+  }, [libraryId]);
+
+  useEffect(() => {
+    if (rootTab === "members") {
+      fetchLibraryInvitations();
+    }
+  }, [rootTab, fetchLibraryInvitations]);
+
+  const handleSendInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!libraryId || !inviteEmail.trim()) return;
+
+    setIsSendingInvite(true);
+    setActionError(null);
+    setActionSuccess(null);
+    try {
+      await api.invitations.create(libraryId, {
+        email: inviteEmail.trim().toLowerCase(),
+        intended_access: inviteRole,
+      });
+      setActionSuccess(`Invitation sent to ${inviteEmail.trim()}.`);
+      setInviteEmail("");
+      setIsInviteModalOpen(false);
+      fetchLibraryInvitations();
+    } catch (err: any) {
+      setActionError(err?.message || "Failed to issue invitation.");
+    } finally {
+      setIsSendingInvite(false);
+    }
+  };
+
+  const handleRevokeInvite = async (invitationId: string, email: string) => {
+    setRevokingInviteId(invitationId);
+    setActionError(null);
+    setActionSuccess(null);
+    try {
+      await api.invitations.revoke(libraryId, invitationId);
+      setActionSuccess(`Revoked invitation for ${email}.`);
+      setLibraryInvitations((prev) =>
+        prev.map((i) => (i.id === invitationId ? { ...i, status: "revoked" } : i))
+      );
+    } catch (err: any) {
+      setActionError(err?.message || "Failed to revoke invitation.");
+    } finally {
+      setRevokingInviteId(null);
+    }
+  };
 
   const institutionConfig = useMemo(
     () => getInstitutionConfig(activeInstitution?.institution_type),
@@ -524,9 +606,46 @@ export default function LibraryDetailClient() {
       )}
 
       {/* ========================================================================= */}
-      {/* LEVEL 1: LIBRARY ROOT (Shelves View Only)                                 */}
+      {/* LEVEL 1: LIBRARY ROOT TABS & SHELVES                                      */}
       {/* ========================================================================= */}
       {!activeShelf && (
+        <div className="flex border-b border-slate-200 text-xs font-medium gap-2">
+          <button
+            type="button"
+            onClick={() => setRootTab("shelves")}
+            className={`pb-2.5 px-3 border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${
+              rootTab === "shelves"
+                ? "border-amber-600 text-amber-700 font-semibold"
+                : "border-transparent text-slate-500 hover:text-slate-900"
+            }`}
+          >
+            <FolderOpen size={14} />
+            <span>Knowledge Shelves</span>
+            <span className="rounded-full bg-slate-100 px-1.5 py-0.2 text-[10px] text-slate-600">
+              {shelves.length}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setRootTab("members")}
+            className={`pb-2.5 px-3 border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${
+              rootTab === "members"
+                ? "border-amber-600 text-amber-700 font-semibold"
+                : "border-transparent text-slate-500 hover:text-slate-900"
+            }`}
+          >
+            <Users size={14} />
+            <span>Members & Invitations</span>
+            {libraryInvitations.filter((i) => i.status === "pending").length > 0 && (
+              <span className="rounded-full bg-accent-subtle text-accent border border-accent/20 px-1.5 py-0.2 text-[10px] font-semibold">
+                {libraryInvitations.filter((i) => i.status === "pending").length}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
+
+      {!activeShelf && rootTab === "shelves" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between border-b border-slate-200 pb-2">
             <div className="flex items-center gap-2">
@@ -623,6 +742,152 @@ export default function LibraryDetailClient() {
             <div>
               <span className="font-semibold text-slate-800">Knowledge Organization:</span> Books, syllabi, and study resources must reside inside shelves. Open any shelf above to upload files, manage documents, or inspect AI vector embeddings.
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* LEVEL 1: LIBRARY ROOT - MEMBERS & INVITATIONS VIEW */}
+      {!activeShelf && rootTab === "members" && (
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-900">
+                Library Invitations & Access
+              </h2>
+              <p className="text-[11px] text-slate-500">
+                Authorized educators, students, and curators for <strong>{library.name}</strong>.
+              </p>
+            </div>
+            <button
+              onClick={() => setIsInviteModalOpen(true)}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-slate-900 px-3 text-xs font-medium text-white hover:bg-slate-800 transition-colors shadow-xs cursor-pointer"
+            >
+              <UserPlus size={13} />
+              <span>+ Invite to Library</span>
+            </button>
+          </div>
+
+          {/* Pending Invitations Table */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wider">
+              <Mail size={14} className="text-amber-600" />
+              <span>
+                Pending Invitations (
+                {libraryInvitations.filter((i) => i.status === "pending").length})
+              </span>
+            </div>
+
+            {isLoadingLibInvites ? (
+              <div className="flex h-32 items-center justify-center text-xs text-slate-400">
+                <Loader2 size={16} className="animate-spin mr-2 text-accent" />
+                Loading invitations...
+              </div>
+            ) : libraryInvitations.length === 0 ? (
+              <div className="rounded-xl border border-slate-200 bg-white p-6 text-center shadow-xs">
+                <p className="text-xs text-slate-500">
+                  No invitations sent yet for this library.
+                </p>
+                <button
+                  onClick={() => setIsInviteModalOpen(true)}
+                  className="mt-2 text-xs font-medium text-accent hover:underline cursor-pointer"
+                >
+                  Send an invitation
+                </button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-xs">
+                <table className="w-full text-left text-xs">
+                  <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                    <tr>
+                      <th className="px-4 py-2.5">Recipient</th>
+                      <th className="px-4 py-2.5">Intended Role</th>
+                      <th className="px-4 py-2.5">Status</th>
+                      <th className="px-4 py-2.5">Invited By</th>
+                      <th className="px-4 py-2.5">Expires / Created</th>
+                      <th className="px-4 py-2.5 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-slate-700">
+                    {libraryInvitations.map((inv) => {
+                      const isPending = inv.status === "pending" && !inv.is_expired;
+                      const isRevoking = revokingInviteId === inv.id;
+
+                      return (
+                        <tr key={inv.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="px-4 py-2.5">
+                            <div className="font-medium text-slate-900">
+                              {inv.recipient_email}
+                            </div>
+                            {inv.recipient_user && (
+                              <span className="text-[10px] text-emerald-600 font-medium">
+                                Registered User
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <span className="capitalize font-medium text-slate-800">
+                              {inv.intended_access}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[10px] font-medium border capitalize ${
+                                inv.status === "accepted"
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                  : inv.status === "pending" && !inv.is_expired
+                                  ? "bg-amber-50 text-amber-700 border-amber-200"
+                                  : inv.status === "declined"
+                                  ? "bg-slate-100 text-slate-600 border-slate-200"
+                                  : "bg-rose-50 text-rose-700 border-rose-200"
+                              }`}
+                            >
+                              {inv.is_expired && inv.status === "pending"
+                                ? "expired"
+                                : inv.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-slate-500">
+                            {inv.inviter.email}
+                          </td>
+                          <td className="px-4 py-2.5 text-slate-500 text-[11px]">
+                            {isPending ? (
+                              <span className="flex items-center gap-1 text-amber-700">
+                                <Clock size={11} />
+                                <span>
+                                  Expires {new Date(inv.expires_at).toLocaleDateString()}
+                                </span>
+                              </span>
+                            ) : (
+                              <span>{new Date(inv.created_at).toLocaleDateString()}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5 text-right">
+                            {isPending && (
+                              <button
+                                type="button"
+                                disabled={isRevoking}
+                                onClick={() =>
+                                  handleRevokeInvite(inv.id, inv.recipient_email)
+                                }
+                                className="inline-flex h-6 items-center gap-1 rounded border border-rose-200 bg-rose-50 px-2 text-[11px] font-medium text-rose-700 hover:bg-rose-100 disabled:opacity-50 transition-colors cursor-pointer"
+                              >
+                                {isRevoking ? (
+                                  <Loader2 size={10} className="animate-spin" />
+                                ) : (
+                                  <RotateCcw size={10} />
+                                )}
+                                <span>Revoke</span>
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1168,6 +1433,99 @@ export default function LibraryDetailClient() {
                 {isDeleting ? "Deleting..." : "Confirm Delete"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Invite Member to Library */}
+      {isInviteModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs"
+          onClick={() => !isSendingInvite && setIsInviteModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-2xl animate-in fade-in zoom-in duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                  <UserPlus size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    Invite to {library.name}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Send an invitation link with direct library access.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsInviteModalOpen(false)}
+                className="rounded p-1 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSendInvite} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-medium text-slate-700 mb-1">
+                  Recipient Email Address
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="colleague@institution.edu"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="h-8 w-full rounded-lg border border-slate-200 px-2.5 text-xs text-slate-900 focus:border-accent focus:outline-none"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  New users will be asked to register and verify their email first.
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-medium text-slate-700 mb-1">
+                  Intended Access Role
+                </label>
+                <select
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value as LibraryAccessRole)}
+                  className="h-8 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-900 focus:border-accent focus:outline-none capitalize"
+                >
+                  <option value="student">Student / Viewer</option>
+                  <option value="teacher">Teacher / Contributor</option>
+                  <option value="administrator">Administrator / Curator</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  disabled={isSendingInvite}
+                  onClick={() => setIsInviteModalOpen(false)}
+                  className="h-8 rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSendingInvite || !inviteEmail.trim()}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-slate-900 px-3 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition-colors shadow-xs cursor-pointer"
+                >
+                  {isSendingInvite ? (
+                    <Loader2 size={13} className="animate-spin" />
+                  ) : (
+                    <Send size={13} />
+                  )}
+                  <span>Send Invitation</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

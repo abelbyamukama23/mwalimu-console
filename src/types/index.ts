@@ -25,6 +25,8 @@ export interface Institution {
   slug: string;
   status: InstitutionStatus;
   institution_type: InstitutionType;
+  badge_url?: string | null;
+  logo_updated_at?: string | null;
   created_by_id?: string | null;
   created_at: string;
   updated_at: string;
@@ -308,5 +310,86 @@ export interface InstitutionContextRegion {
   priority: number;
   created_at: string;
   updated_at: string;
+}
+
+// =============================================================================
+// Phase 3 Communication & Invitation Types
+// =============================================================================
+
+export type LibraryInvitationStatus =
+  | "pending"
+  | "accepted"
+  | "declined"
+  | "expired"
+  | "revoked";
+
+export interface LibraryInvitation {
+  id: string;
+  library: {
+    id: string;
+    name: string;
+    slug?: string;
+  };
+  institution?: {
+    id: string;
+    name: string;
+    slug?: string;
+  } | null;
+  inviter: {
+    id: string;
+    email: string;
+    display_name?: string;
+  };
+  recipient_email: string;
+  recipient_user?: {
+    id: string;
+    email: string;
+  } | null;
+  intended_access: LibraryAccessRole;
+  status: LibraryInvitationStatus;
+  token?: string;
+  expires_at: string;
+  accepted_at?: string | null;
+  declined_at?: string | null;
+  revoked_at?: string | null;
+  is_expired: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PublicInvitationResolution {
+  library_name: string;
+  library_id: string;
+  institution_name?: string;
+  institution_badge_url?: string | null;
+  inviter_name?: string;
+  intended_access: LibraryAccessRole;
+  masked_recipient_email: string;
+  status: LibraryInvitationStatus;
+  expires_at: string;
+  is_expired: boolean;
+  can_accept: boolean;
+}
+
+export interface PlatformNotification {
+  id: string;
+  recipient_id: string;
+  actor?: {
+    id: string;
+    email: string;
+    display_name?: string;
+  } | null;
+  notification_type: string;
+  title: string;
+  message: string;
+  payload: Record<string, any>;
+  is_read: boolean;
+  read_at?: string | null;
+  expires_at?: string | null;
+  created_at: string;
+}
+
+export interface UnreadNotificationCountResponse {
+  unread_count: number;
 }
 

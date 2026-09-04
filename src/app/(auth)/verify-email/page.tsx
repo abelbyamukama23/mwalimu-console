@@ -25,7 +25,8 @@ function VerifyEmailForm() {
 
     try {
       await verifyEmail(email, otp, displayName);
-      router.push("/onboarding");
+      const next = searchParams.get("next");
+      router.push(next || "/onboarding");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Verification failed.");
     } finally {
