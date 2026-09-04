@@ -46,8 +46,36 @@ export class ApiClientError extends Error {
   }
 }
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:8000";
+export function getApiBaseUrl(): string {
+  // 1. Browser runtime check: if loaded on ai-mwalimu.com or pages.dev, always use backend domain
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host.includes("ai-mwalimu.com") || host.includes("pages.dev")) {
+      return "https://backend.ai-mwalimu.com";
+    }
+  }
+  // 2. Next.js environment variable check
+  const envUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
+  if (envUrl) {
+    // If in browser and not on localhost, but env was baked with localhost, override to production backend
+    if (
+      typeof window !== "undefined" &&
+      !["localhost", "127.0.0.1"].includes(window.location.hostname) &&
+      envUrl.includes("localhost")
+    ) {
+      return "https://backend.ai-mwalimu.com";
+    }
+    return envUrl;
+  }
+  // 3. Fallback for non-local hosts
+  if (
+    typeof window !== "undefined" &&
+    !["localhost", "127.0.0.1"].includes(window.location.hostname)
+  ) {
+    return "https://backend.ai-mwalimu.com";
+  }
+  return "http://localhost:8000";
+}
 
 let isRefreshing = false;
 let refreshSubscribers: Array<(token: string | null) => void> = [];
@@ -62,8 +90,9 @@ function onRefreshed(token: string | null) {
 }
 
 async function tryRefreshToken(): Promise<string | null> {
+  const baseUrl = getApiBaseUrl();
   try {
-    const res = await fetch(`${API_BASE_URL}/api/v1/auth/refresh/`, {
+    const res = await fetch(`${baseUrl}/api/v1/auth/refresh/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -93,7 +122,8 @@ export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
   const headers = new Headers(options.headers || {});
 
   if (!headers.has("Content-Type") && !(options.body instanceof FormData)) {
@@ -121,7 +151,16 @@ export async function apiRequest<T>(
     credentials: "include",
   };
 
-  let response = await fetch(url, config);
+  let response: Response;
+  try {
+    response = await fetch(url, config);
+  } catch (err: any) {
+    throw new ApiClientError(
+      `Network connection failed: ${err?.message || "Failed to fetch"} (Target: ${url})`,
+      0,
+      err
+    );
+  }
 
   // Handle 401 Unauthorized with token refresh
   if (response.status === 401 && !endpoint.includes("/auth/login") && !endpoint.includes("/auth/refresh")) {
@@ -133,7 +172,15 @@ export async function apiRequest<T>(
 
       if (newToken) {
         headers.set("Authorization", `Bearer ${newToken}`);
-        response = await fetch(url, { ...config, headers });
+        try {
+          response = await fetch(url, { ...config, headers });
+        } catch (err: any) {
+          throw new ApiClientError(
+            `Network connection failed on retry: ${err?.message || "Failed to fetch"} (Target: ${url})`,
+            0,
+            err
+          );
+        }
       }
     } else {
       const newToken = await new Promise<string | null>((resolve) => {
@@ -141,7 +188,15 @@ export async function apiRequest<T>(
       });
       if (newToken) {
         headers.set("Authorization", `Bearer ${newToken}`);
-        response = await fetch(url, { ...config, headers });
+        try {
+          response = await fetch(url, { ...config, headers });
+        } catch (err: any) {
+          throw new ApiClientError(
+            `Network connection failed on retry: ${err?.message || "Failed to fetch"} (Target: ${url})`,
+            0,
+            err
+          );
+        }
       }
     }
   }
@@ -427,7 +482,7 @@ export const api = {
     },
 
     async download(libraryId: string, id: string, filename: string): Promise<void> {
-      const url = `${API_BASE_URL}/api/v1/libraries/${libraryId}/resources/${id}/download/`;
+      const url = `${getApiBaseUrl()}/api/v1/libraries/${libraryId}/resources/${id}/download/`;
       const token = getAccessToken();
       const activeInstId = getActiveInstitutionId();
 

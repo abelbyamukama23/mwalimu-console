@@ -1,6 +1,10 @@
 @import url("https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap");
 @import "tailwindcss";
 
+/*
+ * Mwalimu Institutional Console Design Tokens
+ * Matched identically to the Mwalimu Chat Interface & Figma design system.
+ */
 @theme {
   --font-sans: "Geist", "Geist Sans", "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -11,32 +15,89 @@
   --tracking-snug: -0.012em;
   --tracking-normal: -0.006em;
 
-  --color-canvas: #f8fafc;
+  /* Light Surfaces (Warm Linen / Sand signature Mwalimu chat palette) */
+  --color-canvas: #faf7f2;
   --color-surface: #ffffff;
-  --color-sidebar: #fbfcfd;
-  --color-sidebar-hover: #f1f5f9;
-  --color-sidebar-active: #f0fdf9;
-  --color-sidebar-border: #e8ecf1;
-  
+  --color-subtle: #f2eee6;
+  --color-sidebar: #f4f1ea;
+  --color-sidebar-hover: #ece7dd;
+  --color-sidebar-active: #e6efec;
+  --color-sidebar-border: #e5e1d8;
+  --color-active: #e6efec;
+
+  /* Emerald Primary */
   --color-accent: #0d7a68;
   --color-accent-hover: #0a6657;
-  --color-accent-subtle: #f0fdf9;
+  --color-accent-subtle: #e6efec;
 
-  --color-ink: #0f172a;
-  --color-ink-secondary: #64748b;
-  --color-ink-tertiary: #94a3b8;
+  /* CTA Button */
+  --color-cta: #0d7a68;
+  --color-cta-fg: #ffffff;
+  --color-cta-hover: #0a6657;
+  --color-cta-active: #075246;
 
-  --color-border: #e8ecf1;
-  --color-border-strong: #cbd5e1;
+  /* Inks */
+  --color-ink: #1a1a18;
+  --color-ink-secondary: #6b6b63;
+  --color-ink-tertiary: #9a968a;
 
-  --color-success-bg: #ecfdf5;
-  --color-success-fg: #065f46;
-  --color-warning-bg: #fffbeb;
-  --color-warning-fg: #92400e;
-  --color-info-bg: #eff6ff;
-  --color-info-fg: #1e40af;
-  --color-danger-bg: #fef2f2;
+  /* Lines */
+  --color-border: #e5e1d8;
+  --color-border-strong: #d8d3c6;
+
+  /* Status Badges */
+  --color-success-bg: #e6f2ea;
+  --color-success-fg: #2f7a4f;
+  --color-warning-bg: #fbf0dd;
+  --color-warning-fg: #b8791f;
+  --color-info-bg: #e5f0f5;
+  --color-info-fg: #2c6e8c;
+  --color-accentsoft-bg: #fbebe0;
+  --color-accentsoft-fg: #d97b3f;
+  --color-danger-bg: #fee2e2;
   --color-danger-fg: #991b1b;
+}
+
+/*
+ * Mwalimu dark palette — warm, low-contrast surfaces identical to the chat interface.
+ * Toggling the `dark` class on <html> swaps these variables.
+ */
+.dark {
+  --color-canvas: #171614;
+  --color-surface: #201e1b;
+  --color-subtle: #2a2723;
+  --color-sidebar: #1d1b18;
+  --color-sidebar-hover: #262420;
+  --color-sidebar-active: #25312e;
+  --color-sidebar-border: #3a3732;
+  --color-active: #25312e;
+
+  --color-accent: #4fa89b;
+  --color-accent-hover: #5cb7a9;
+  --color-accent-subtle: #24332f;
+
+  --color-cta: #1f5c52;
+  --color-cta-fg: #ffffff;
+  --color-cta-hover: #184a41;
+  --color-cta-active: #133932;
+
+  --color-ink: #e8e6e2;
+  --color-ink-secondary: #b0aca4;
+  --color-ink-tertiary: #8a867c;
+
+  --color-border: #3a3732;
+  --color-border-strong: #4a4741;
+
+  --color-success-bg: #22302a;
+  --color-success-fg: #6cc08a;
+  --color-warning-bg: #33291a;
+  --color-warning-fg: #d0a34a;
+  --color-info-bg: #1f2d35;
+  --color-info-fg: #6fb3d1;
+  --color-accentsoft-bg: #35281f;
+  --color-accentsoft-fg: #e09155;
+  --color-danger-bg: #3a2222;
+  --color-danger-fg: #f87171;
 }
 
 body {
@@ -53,13 +114,13 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Resend typographic hierarchy for headings */
+/* Headings */
 h1, h2, h3, h4, h5, h6 {
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   letter-spacing: -0.024em;
 }
 
-/* Monospace text */
+/* Monospace */
 code, kbd, samp, pre {
   font-family: var(--font-mono);
   letter-spacing: -0.005em;
@@ -73,4 +134,52 @@ code, kbd, samp, pre {
 .focus-ring:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
+}
+
+/* Dark mode utility harmonizations for standard Tailwind palette classes */
+.dark .bg-white {
+  background-color: var(--color-surface) !important;
+}
+
+.dark .bg-slate-50 {
+  background-color: var(--color-subtle) !important;
+}
+
+.dark .bg-slate-100 {
+  background-color: var(--color-subtle) !important;
+}
+
+.dark .text-slate-900 {
+  color: var(--color-ink) !important;
+}
+
+.dark .text-slate-800,
+.dark .text-slate-700 {
+  color: var(--color-ink) !important;
+}
+
+.dark .text-slate-600,
+.dark .text-slate-500 {
+  color: var(--color-ink-secondary) !important;
+}
+
+.dark .text-slate-400 {
+  color: var(--color-ink-tertiary) !important;
+}
+
+.dark .border-slate-200,
+.dark .border-slate-100 {
+  border-color: var(--color-border) !important;
+}
+
+.dark .hover\:bg-slate-50:hover {
+  background-color: var(--color-subtle) !important;
+}
+
+.dark .hover\:bg-slate-100:hover {
+  background-color: var(--color-subtle) !important;
+}
+
+.dark .hover\:text-slate-900:hover {
+  color: var(--color-ink) !important;
 }
