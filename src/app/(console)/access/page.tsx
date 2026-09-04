@@ -349,7 +349,7 @@ export default function AccessPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Filter granted members by email..."
-              className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50/50 pl-8 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-accent focus:outline-none transition-colors"
+              className="h-8 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 pl-8 pr-3 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-accent focus:outline-none transition-colors"
             />
           </div>
 
@@ -361,7 +361,7 @@ export default function AccessPage() {
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 focus:border-accent focus:outline-none"
+              className="h-8 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2 text-xs text-slate-700 dark:text-slate-200 focus:border-accent focus:outline-none"
             >
               <option value="all">All Granted Roles</option>
               <option value="student">Students</option>
@@ -374,15 +374,15 @@ export default function AccessPage() {
 
       {/* Policies Table */}
       {!selectedLibraryId ? (
-        <div className="rounded-xl border border-dashed border-slate-200 bg-white p-12 text-center text-xs text-slate-400">
+        <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-surface p-12 text-center text-xs text-slate-400">
           Select or create an institutional library to inspect its access policies.
         </div>
       ) : isPoliciesLoading ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-12 text-center text-xs text-slate-400">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-surface p-12 text-center text-xs text-slate-400">
           Loading access policies for {selectedLibrary?.name}...
         </div>
       ) : error ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-12 text-center text-xs text-rose-700">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-surface p-12 text-center text-xs text-rose-700">
           <p>{error}</p>
           <button
             onClick={fetchPolicies}
@@ -392,11 +392,11 @@ export default function AccessPage() {
           </button>
         </div>
       ) : filteredPolicies.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-200 bg-white p-12 text-center">
-          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-accent mb-2">
+        <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-surface p-12 text-center">
+          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-accent mb-2">
             <Lock size={18} />
           </div>
-          <h3 className="text-xs font-semibold text-slate-900">No individual access policies</h3>
+          <h3 className="text-xs font-semibold text-slate-900 dark:text-slate-100">No individual access policies</h3>
           <p className="mx-auto mt-0.5 max-w-sm text-xs text-slate-400">
             {selectedLibrary?.visibility === "discoverable"
               ? "This library is discoverable to all active members of this institution. You can grant specific elevated roles below."
@@ -411,10 +411,10 @@ export default function AccessPage() {
           </button>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
+        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-surface shadow-xs">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs divide-y divide-slate-100">
-              <thead className="bg-slate-50/80 text-slate-500 font-medium">
+            <table className="w-full text-left text-xs divide-y divide-slate-100 dark:divide-slate-800">
+              <thead className="bg-slate-50/80 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-800">
                 <tr>
                   <th className="px-3.5 py-2">Granted Member</th>
                   <th className="px-3.5 py-2">Access Role</th>
@@ -422,11 +422,11 @@ export default function AccessPage() {
                   <th className="px-3.5 py-2 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 bg-white dark:bg-surface">
                 {filteredPolicies.map((policy) => {
                   const isMutating = mutatingPolicyId === policy.id;
                   return (
-                    <tr key={policy.id} className="hover:bg-slate-50/60 transition-colors">
+                    <tr key={policy.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition-colors">
                       <td className="px-3.5 py-2.5">
                         <div className="flex items-center gap-2.5">
                           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-600 font-medium">

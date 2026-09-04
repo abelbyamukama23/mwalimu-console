@@ -141,14 +141,6 @@ code, kbd, samp, pre {
   background-color: var(--color-surface) !important;
 }
 
-.dark .bg-slate-50 {
-  background-color: var(--color-subtle) !important;
-}
-
-.dark .bg-slate-100 {
-  background-color: var(--color-subtle) !important;
-}
-
 .dark .text-slate-900 {
   color: var(--color-ink) !important;
 }
@@ -172,14 +164,82 @@ code, kbd, samp, pre {
   border-color: var(--color-border) !important;
 }
 
-.dark .hover\:bg-slate-50:hover {
-  background-color: var(--color-subtle) !important;
-}
-
-.dark .hover\:bg-slate-100:hover {
-  background-color: var(--color-subtle) !important;
-}
-
 .dark .hover\:text-slate-900:hover {
   color: var(--color-ink) !important;
+}
+
+/*
+ * ==========================================================================
+ * Dark Mode Theme Harmonization for Tables, Headers, Search Bars & onFocus:
+ * Matches the deep navy-slate theme (#0f172a / #1e293b) of the "Grant Access Policy" button.
+ * ==========================================================================
+ */
+
+/* 1. Table Headers (thead) */
+.dark thead,
+.dark thead tr,
+.dark thead th {
+  background-color: #0f172a !important;
+  color: #94a3b8 !important;
+  border-color: #1e293b !important;
+}
+
+/* 2. Card Header Strips & Section Headers (e.g. Recent Notifications header) */
+.dark [class*="bg-slate-50"] {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+}
+
+.dark [class*="bg-slate-100"] {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+}
+
+/* 3. Search Bars, Text Inputs, Selects, and Textareas in Dark Mode */
+.dark input[type="text"],
+.dark input[type="search"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark select,
+.dark textarea {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* 4. onFocus state for Search Bars and Inputs — eliminates glaring white flash */
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus,
+.dark .focus\:bg-white:focus,
+.dark input.focus\:bg-white:focus,
+.dark select.focus\:bg-white:focus {
+  background-color: #0f172a !important;
+  border-color: #4fa89b !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 1px #4fa89b !important;
+  outline: none !important;
+}
+
+/* 5. Table Rows onHover and onFocus */
+.dark tbody tr:hover,
+.dark [class*="hover\:bg-slate-50"]:hover {
+  background-color: #1e293b !important;
+}
+
+.dark tbody tr:focus,
+.dark tbody tr:focus-within,
+.dark [class*="focus\:bg-slate"]:focus {
+  background-color: #1e293b !important;
+}
+
+/* 6. Table Dividers */
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #1e293b !important;
 }

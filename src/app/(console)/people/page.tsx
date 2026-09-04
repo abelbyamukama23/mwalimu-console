@@ -300,7 +300,7 @@ export default function PeoplePage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search members by email..."
-            className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50/50 pl-8 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-accent focus:outline-none transition-colors"
+            className="h-8 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 pl-8 pr-3 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-accent focus:outline-none transition-colors"
           />
         </div>
 
@@ -313,7 +313,7 @@ export default function PeoplePage() {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 focus:border-accent focus:outline-none"
+            className="h-8 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2 text-xs text-slate-700 dark:text-slate-200 focus:border-accent focus:outline-none"
           >
             <option value="all">All Roles</option>
             {roleOptions.map((opt) => (
@@ -326,7 +326,7 @@ export default function PeoplePage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 focus:border-accent focus:outline-none"
+            className="h-8 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2 text-xs text-slate-700 dark:text-slate-200 focus:border-accent focus:outline-none"
           >
             <option value="all">All Statuses</option>
             {STATUS_OPTIONS.map((opt) => (
@@ -339,7 +339,7 @@ export default function PeoplePage() {
       </div>
 
       {/* Members Table */}
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
+      <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-surface shadow-xs">
         {isLoading ? (
           <div className="p-8 text-center text-xs text-slate-400">
             Loading institutional members...
@@ -356,10 +356,10 @@ export default function PeoplePage() {
           </div>
         ) : filteredMembers.length === 0 ? (
           <div className="p-12 text-center">
-            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-400 mb-2">
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 mb-2">
               <Users size={18} />
             </div>
-            <h3 className="text-xs font-semibold text-slate-900">No members found</h3>
+            <h3 className="text-xs font-semibold text-slate-900 dark:text-slate-100">No members found</h3>
             <p className="mt-0.5 text-xs text-slate-400">
               {searchQuery || roleFilter !== "all" || statusFilter !== "all"
                 ? "Try adjusting your search query or filters."
@@ -368,8 +368,8 @@ export default function PeoplePage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs divide-y divide-slate-100">
-              <thead className="bg-slate-50/80 text-slate-500 font-medium">
+            <table className="w-full text-left text-xs divide-y divide-slate-100 dark:divide-slate-800">
+              <thead className="bg-slate-50/80 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-800">
                 <tr>
                   <th className="px-3.5 py-2">Member</th>
                   <th className="px-3.5 py-2">Role</th>
@@ -378,11 +378,11 @@ export default function PeoplePage() {
                   <th className="px-3.5 py-2 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 bg-white dark:bg-surface">
                 {filteredMembers.map((m) => {
                   const isMutating = mutatingId === m.id;
                   return (
-                    <tr key={m.id} className="hover:bg-slate-50/60 transition-colors">
+                    <tr key={m.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition-colors">
                       <td className="px-3.5 py-2.5">
                         <div className="flex items-center gap-2.5">
                           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-600 font-medium">

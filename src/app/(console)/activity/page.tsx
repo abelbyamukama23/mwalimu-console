@@ -145,13 +145,13 @@ export default function NotificationsPage() {
       {/* Category Pills & Search Toolbar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* Category Tabs */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 border border-slate-200/60 w-fit">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 w-fit">
           <button
             onClick={() => setCategoryFilter("all")}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               categoryFilter === "all"
-                ? "bg-white text-slate-900 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
             }`}
           >
             <Layers size={13} />
@@ -161,8 +161,8 @@ export default function NotificationsPage() {
             onClick={() => setCategoryFilter("members")}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               categoryFilter === "members"
-                ? "bg-white text-slate-900 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
             }`}
           >
             <Users size={13} />
@@ -172,8 +172,8 @@ export default function NotificationsPage() {
             onClick={() => setCategoryFilter("knowledge")}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               categoryFilter === "knowledge"
-                ? "bg-white text-slate-900 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
             }`}
           >
             <BookOpen size={13} />
@@ -183,8 +183,8 @@ export default function NotificationsPage() {
             onClick={() => setCategoryFilter("security")}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               categoryFilter === "security"
-                ? "bg-white text-slate-900 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
             }`}
           >
             <Shield size={13} />
@@ -204,7 +204,7 @@ export default function NotificationsPage() {
               placeholder="Search notifications..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8 w-full rounded-lg border border-slate-200 bg-white pl-8 pr-3 text-xs text-slate-800 placeholder-slate-400 focus:border-slate-400 focus:outline-none shadow-xs"
+              className="h-8 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pl-8 pr-3 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:border-accent dark:focus:border-accent focus:bg-white dark:focus:bg-slate-900 focus:outline-none shadow-xs"
             />
           </div>
           <button
@@ -217,11 +217,11 @@ export default function NotificationsPage() {
       </div>
 
       {/* Notifications Feed */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-xs overflow-hidden">
-        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 bg-slate-50/60">
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-surface shadow-xs overflow-hidden">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 px-4 py-3 bg-slate-50/60 dark:bg-slate-900">
           <div className="flex items-center gap-2">
-            <Bell size={14} className="text-slate-600" />
-            <span className="text-xs font-semibold text-slate-800">Recent Notifications</span>
+            <Bell size={14} className="text-slate-600 dark:text-slate-400" />
+            <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Recent Notifications</span>
           </div>
           <span className="text-xs text-slate-400">
             {formattedNotifications.length} update{formattedNotifications.length === 1 ? "" : "s"}
