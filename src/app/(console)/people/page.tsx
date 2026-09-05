@@ -138,9 +138,11 @@ export default function PeoplePage() {
       );
       const results = await Promise.all(invitePromises);
       const allInvites = results.flatMap((r) => r.results || []);
-      allInvites.sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
+      allInvites.sort((a, b) => {
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return timeB - timeA;
+      });
       setInvitations(allInvites);
     } catch {
       // Graceful ignore
@@ -192,11 +194,16 @@ export default function PeoplePage() {
   };
 
   const handleRevokeInvitation = async (invitation: LibraryInvitation) => {
+    const libraryId = invitation.library?.id || invitation.library_id;
+    if (!libraryId) {
+      setActionError("Cannot revoke invitation: missing library identifier.");
+      return;
+    }
     setRevokingInviteId(invitation.id);
     setActionError(null);
     setActionSuccess(null);
     try {
-      await api.invitations.revoke(invitation.library.id, invitation.id);
+      await api.invitations.revoke(libraryId, invitation.id);
       setActionSuccess(`Revoked invitation for ${invitation.recipient_email}.`);
       setInvitations((prev) =>
         prev.map((i) => (i.id === invitation.id ? { ...i, status: "revoked" } : i))
@@ -831,6 +838,16 @@ export default function PeoplePage() {
                   {invitations.map((inv) => {
                     const isRevoking = revokingInviteId === inv.id;
                     const isPending = inv.status === "pending" && !inv.is_expired;
+                    const libraryName =
+                      inv.library?.name || inv.library_name || "Institutional Library";
+                    const inviterEmail =
+                      inv.inviter?.email || inv.inviter_email || "Administrator";
+                    const formattedExpires = inv.expires_at
+                      ? new Date(inv.expires_at).toLocaleDateString()
+                      : "—";
+                    const formattedCreated = inv.created_at
+                      ? new Date(inv.created_at).toLocaleDateString()
+                      : "—";
 
                     return (
                       <tr key={inv.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/50 transition-colors">
@@ -843,7 +860,7 @@ export default function PeoplePage() {
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          <span className="font-medium text-slate-800 dark:text-slate-200">{inv.library.name}</span>
+                          <span className="font-medium text-slate-800 dark:text-slate-200">{libraryName}</span>
                         </td>
                         <td className="px-4 py-3">
                           <span className="capitalize text-slate-700 dark:text-slate-300 font-medium">
@@ -866,16 +883,16 @@ export default function PeoplePage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
-                          {inv.inviter.email}
+                          {inviterEmail}
                         </td>
                         <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-[11px]">
                           {isPending ? (
                             <span className="flex items-center gap-1 text-amber-700 dark:text-amber-400">
                               <Clock size={11} />
-                              <span>Expires {new Date(inv.expires_at).toLocaleDateString()}</span>
+                              <span>Expires {formattedExpires}</span>
                             </span>
                           ) : (
-                            <span>{new Date(inv.created_at).toLocaleDateString()}</span>
+                            <span>{formattedCreated}</span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">

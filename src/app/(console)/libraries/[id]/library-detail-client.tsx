@@ -838,6 +838,14 @@ export default function LibraryDetailClient() {
                     {libraryInvitations.map((inv) => {
                       const isPending = inv.status === "pending" && !inv.is_expired;
                       const isRevoking = revokingInviteId === inv.id;
+                      const inviterEmail =
+                        inv.inviter?.email || inv.inviter_email || "Administrator";
+                      const formattedExpires = inv.expires_at
+                        ? new Date(inv.expires_at).toLocaleDateString()
+                        : "—";
+                      const formattedCreated = inv.created_at
+                        ? new Date(inv.created_at).toLocaleDateString()
+                        : "—";
 
                       return (
                         <tr key={inv.id} className="hover:bg-slate-50/60 transition-colors">
@@ -874,18 +882,18 @@ export default function LibraryDetailClient() {
                             </span>
                           </td>
                           <td className="px-4 py-2.5 text-slate-500">
-                            {inv.inviter.email}
+                            {inviterEmail}
                           </td>
                           <td className="px-4 py-2.5 text-slate-500 text-[11px]">
                             {isPending ? (
                               <span className="flex items-center gap-1 text-amber-700">
                                 <Clock size={11} />
                                 <span>
-                                  Expires {new Date(inv.expires_at).toLocaleDateString()}
+                                  Expires {formattedExpires}
                                 </span>
                               </span>
                             ) : (
-                              <span>{new Date(inv.created_at).toLocaleDateString()}</span>
+                              <span>{formattedCreated}</span>
                             )}
                           </td>
                           <td className="px-4 py-2.5 text-right">

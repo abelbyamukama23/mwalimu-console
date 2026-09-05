@@ -396,26 +396,33 @@ export type LibraryInvitationStatus =
 
 export interface LibraryInvitation {
   id: string;
-  library: {
+  library?: {
     id: string;
     name: string;
     slug?: string;
   };
+  library_id?: string;
+  library_name?: string;
   institution?: {
     id: string;
     name: string;
     slug?: string;
   } | null;
-  inviter: {
+  institution_id?: string | null;
+  institution_name?: string | null;
+  inviter?: {
     id: string;
     email: string;
     display_name?: string;
   };
+  inviter_id?: string;
+  inviter_email?: string;
   recipient_email: string;
   recipient_user?: {
     id: string;
     email: string;
   } | null;
+  recipient_user_id?: string | null;
   intended_access: LibraryAccessRole;
   status: LibraryInvitationStatus;
   token?: string;
@@ -423,7 +430,8 @@ export interface LibraryInvitation {
   accepted_at?: string | null;
   declined_at?: string | null;
   revoked_at?: string | null;
-  is_expired: boolean;
+  is_expired?: boolean;
+  is_pending?: boolean;
   created_at: string;
   updated_at: string;
 }
